@@ -1,5 +1,5 @@
 use anyhow::Result;
-use ureq::Agent;
+use ureq::{serde::Serialize, Agent, Response};
 
 struct HttpHandler {
     agent: Agent,
@@ -10,6 +10,10 @@ impl HttpHandler {
         let response = self.agent.get(url).call()?;
         let html = response.into_string()?;
         Ok(html)
+    }
+
+    fn post(&self, url: &str, data: impl Serialize) -> Result<Response> {
+        Ok(self.agent.post(url).send_json(data)?)
     }
 }
 
