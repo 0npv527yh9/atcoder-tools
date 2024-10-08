@@ -1,11 +1,28 @@
+use crate::parser::html_parser::HtmlParser;
 use anyhow::Result;
+use scraper::Html;
+use std::fmt;
 use ureq::{serde::Serialize, Agent, Response};
 
 struct HttpHandler {
     agent: Agent,
+    csrf_token: String,
 }
 
 impl HttpHandler {
+    fn with_fetching(url: &str) -> Result<Self> {
+        let agent = Agent::new();
+
+        let response = agent.get(url).call()?;
+        let html = response.into_string()?;
+
+        let csrf_token = Html::parse_document(&html)
+            .csrf_token()
+            .ok_or(Error::CsrfTokenNotFound)?;
+
+        Ok(Self { agent, csrf_token })
+    }
+
     fn get(&self, url: &str) -> Result<String> {
         let response = self.agent.get(url).call()?;
         let html = response.into_string()?;
@@ -16,6 +33,21 @@ impl HttpHandler {
         Ok(self.agent.post(url).send_json(data)?)
     }
 }
+
+#[derive(Debug)]
+enum Error {
+    CsrfTokenNotFound,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::CsrfTokenNotFound => write!(f, "CSRF Token Not Found"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
@@ -37,6 +69,7 @@ mod tests {
         // Run
         let http_handler = HttpHandler {
             agent: Agent::new(),
+            csrf_token: String::from("Dummy CSRF Token"),
         };
         let actual = http_handler.get(&url).unwrap();
         let actual = actual.replace("\r", "");
@@ -49,5 +82,19 @@ mod tests {
                 assert_eq!(expected, actual);
             }
         }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_with_fetching() {
+        // Setup
+        let url = std::env::var("URL")
+            .expect("You should set the target `URL` as an environment variable.");
+
+        // Run
+        let http_handler = HttpHandler::with_fetching(&url);
+
+        // Verify
+        assert!(http_handler.is_ok())
     }
 }
