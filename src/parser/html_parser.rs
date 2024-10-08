@@ -1,4 +1,4 @@
-use scraper::{error::SelectorErrorKind, ElementRef, Html, Selector};
+use scraper::{error::SelectorErrorKind, selectable::Selectable, ElementRef, Html, Selector};
 
 pub trait HtmlParser {
     fn csrf_token(&self) -> Option<String>;
@@ -14,26 +14,14 @@ impl HtmlParser for Html {
     }
 }
 
-// TODO: Remove duplicate implementations
-trait Select<'a> {
-    fn select_one<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'b>>;
-
-    fn select_all<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'b>>;
-}
-
-impl<'a> Select<'a> for ElementRef<'a> {
+trait Select<'a>: Selectable<'a> + Copy {
     fn select_one<'b>(
         &'a self,
         selectors: &'b str,
     ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'b>> {
         let selector = Selector::parse(selectors)?;
-        Ok(self.select(&selector).next())
+        let element = self.select(&selector).next();
+        Ok(element)
     }
 
     fn select_all<'b>(
@@ -45,23 +33,7 @@ impl<'a> Select<'a> for ElementRef<'a> {
     }
 }
 
-impl<'a> Select<'a> for Html {
-    fn select_one<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'b>> {
-        let selector = Selector::parse(selectors)?;
-        Ok(self.select(&selector).next())
-    }
-
-    fn select_all<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'b>> {
-        let selector = Selector::parse(selectors)?;
-        Ok(self.select(&selector).collect())
-    }
-}
+impl<'a, T: Selectable<'a> + Copy> Select<'a> for T {}
 
 #[cfg(test)]
 mod tests {
