@@ -16,7 +16,7 @@ impl HttpHandler {
         let response = agent.get(url).call()?;
         let html = response.into_string()?;
 
-        let csrf_token = Html::parse_document(&html)
+        let csrf_token = (&Html::parse_document(&html))
             .csrf_token()
             .ok_or(Error::CsrfTokenNotFound)?;
 

@@ -1,11 +1,14 @@
-use scraper::{error::SelectorErrorKind, selectable::Selectable, ElementRef, Html, Selector};
+use scraper::{error::SelectorErrorKind, selectable::Selectable, ElementRef, Selector};
 
-pub trait HtmlParser {
-    fn csrf_token(&self) -> Option<String>;
+pub trait HtmlParser<'a> {
+    fn csrf_token(&'a self) -> Option<String>;
 }
 
-impl HtmlParser for Html {
-    fn csrf_token(&self) -> Option<String> {
+impl<'a, T> HtmlParser<'a> for T
+where
+    T: Selectable<'a> + Copy,
+{
+    fn csrf_token(&'a self) -> Option<String> {
         self.select_one("[name=csrf_token]")
             .ok()
             .flatten()
@@ -37,9 +40,9 @@ impl<'a, T: Selectable<'a> + Copy> Select<'a> for T {}
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-
     use super::*;
+    use scraper::Html;
+    use std::fs;
 
     #[test]
     #[ignore]
@@ -54,7 +57,7 @@ mod tests {
         let html = fs::read_to_string(html).unwrap();
 
         // Run
-        let actual = Html::parse_document(&html)
+        let actual = (&Html::parse_document(&html))
             .csrf_token()
             .expect("ERROR: CSRF Token Not Found");
 
