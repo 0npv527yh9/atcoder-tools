@@ -11,3 +11,4 @@ cookie_store = "0.21.0"
 scraper = "0.20.0"
 serde = { version = "1.0.210", features = ["derive"] }
 ureq = { version = "2.10.1", features = ["json", "cookies"] }
+url = "2.5.2"

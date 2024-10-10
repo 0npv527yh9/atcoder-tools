@@ -1,8 +1,13 @@
-use crate::parser::html_parser::HtmlParser;
+use crate::{
+    dto::{IntoCookieStore, SessionData},
+    parser::html_parser::HtmlParser,
+};
 use anyhow::Result;
+use cookie_store::Cookie;
 use scraper::Html;
 use std::fmt;
 use ureq::{serde::Serialize, Agent, Response};
+use url::Url;
 
 struct HttpHandler {
     agent: Agent,
@@ -23,6 +28,17 @@ impl HttpHandler {
         Ok(Self { agent, csrf_token })
     }
 
+    fn with_session_data(
+        SessionData {
+            cookies,
+            csrf_token,
+        }: SessionData,
+    ) -> Self {
+        let cookie_store = cookies.into_cookie_store();
+        let agent = ureq::builder().cookie_store(cookie_store).build();
+        Self { agent, csrf_token }
+    }
+
     fn get(&self, url: &str) -> Result<String> {
         let response = self.agent.get(url).call()?;
         let html = response.into_string()?;
@@ -31,6 +47,22 @@ impl HttpHandler {
 
     fn post(&self, url: &str, data: impl Serialize) -> Result<Response> {
         Ok(self.agent.post(url).send_json(data)?)
+    }
+
+    fn session_data(&self, url: &Url) -> SessionData {
+        SessionData {
+            cookies: self.cookies(url),
+            csrf_token: self.csrf_token.clone(),
+        }
+    }
+
+    fn cookies(&self, url: &Url) -> Vec<Cookie<'static>> {
+        self.agent
+            .cookie_store()
+            .matches(url)
+            .into_iter()
+            .cloned()
+            .collect()
     }
 }
 

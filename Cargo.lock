@@ -36,6 +36,7 @@ dependencies = [
  "scraper",
  "serde",
  "ureq",
+ "url",
 ]
 
 [[package]]
