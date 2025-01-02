@@ -41,20 +41,17 @@ impl<'a, T: Selectable<'a> + Copy> Select<'a> for T {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils;
     use scraper::Html;
-    use std::fs;
 
     #[test]
     #[ignore]
     fn test_csrf_token() {
         // Setup
-        let html =
-            std::env::var("HTML").expect("You should set the `HTML` as an environment variable.");
+        let html = utils::test::load_homepage_html();
 
         let expected = std::env::var("CSRF_TOKEN")
             .expect("You should set the `CSRF_TOKEN` as an environment variable.");
-
-        let html = fs::read_to_string(html).unwrap();
 
         // Run
         let actual = (&Html::parse_document(&html))

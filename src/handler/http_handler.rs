@@ -51,6 +51,8 @@ impl std::error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
+    use crate::utils;
+
     use super::*;
     use std::fs;
 
@@ -60,8 +62,7 @@ mod tests {
         // Setup
         let url = std::env::var("URL")
             .expect("You should set the target `URL` as an environment variable.");
-        let expected_file = std::env::var("EXPECTED_FILE")
-            .expect("You should set the `EXPECTED_FILE` as an environment variable.");
+        let expected_file = utils::test::load_homepage_html();
 
         let expected = fs::read_to_string(expected_file).unwrap();
         let expected = expected.trim().split('\n').collect::<Vec<_>>();
