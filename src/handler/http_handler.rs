@@ -8,9 +8,9 @@ use scraper::Html;
 use std::fmt;
 use ureq::{serde::Serialize, Agent, Response};
 
-struct HttpHandler {
+pub struct HttpHandler {
     agent: Agent,
-    csrf_token: String,
+    pub csrf_token: String,
 }
 
 impl HttpHandler {
@@ -44,8 +44,8 @@ impl HttpHandler {
         Ok(html)
     }
 
-    fn post(&self, url: &str, data: impl Serialize) -> Result<Response> {
-        Ok(self.agent.post(url).send_json(data)?)
+    pub fn post(&self, url: &str, data: impl Serialize) -> Result<Response, ureq::Error> {
+        self.agent.post(url).send_json(data)
     }
 
     fn session_data(&self) -> SessionData {
