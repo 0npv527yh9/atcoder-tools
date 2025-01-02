@@ -1,5 +1,5 @@
 use crate::{
-    dto::{IntoCookieStore, SessionData},
+    dto::{cookie::IntoCookieStore, SessionData},
     parser::html_parser::HtmlParser,
 };
 use anyhow::Result;
@@ -7,7 +7,6 @@ use cookie_store::Cookie;
 use scraper::Html;
 use std::fmt;
 use ureq::{serde::Serialize, Agent, Response};
-use url::Url;
 
 struct HttpHandler {
     agent: Agent,
@@ -49,18 +48,17 @@ impl HttpHandler {
         Ok(self.agent.post(url).send_json(data)?)
     }
 
-    fn session_data(&self, url: &Url) -> SessionData {
+    fn session_data(&self) -> SessionData {
         SessionData {
-            cookies: self.cookies(url),
+            cookies: self.cookies(),
             csrf_token: self.csrf_token.clone(),
         }
     }
 
-    fn cookies(&self, url: &Url) -> Vec<Cookie<'static>> {
+    fn cookies(&self) -> Vec<Cookie<'static>> {
         self.agent
             .cookie_store()
-            .matches(url)
-            .into_iter()
+            .iter_unexpired()
             .cloned()
             .collect()
     }
@@ -129,5 +127,22 @@ mod tests {
 
         // Verify
         assert!(http_handler.is_ok())
+    }
+
+    #[test]
+    fn test_with_session_data() {
+        // Setup
+        let session_data = utils::test::load_session_data();
+
+        // Execute
+        let http_handler = HttpHandler::with_session_data(session_data);
+
+        // Verify
+        let expected = utils::test::load_session_data();
+        let actual = http_handler.session_data();
+        assert_eq!(
+            serde_json::to_string(&expected).unwrap(),
+            serde_json::to_string(&actual).unwrap()
+        );
     }
 }

@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use crate::dto::SessionData;
 use ureq::Agent;
 
 #[derive(Debug)]
@@ -7,6 +8,7 @@ pub enum Error {
     FetchFailed(String),
     InvalidHtml(String),
     WriteFailed(String),
+    InvalidSessionData(String),
 }
 
 pub fn load_homepage_html() -> String {
@@ -56,6 +58,42 @@ fn save(path: &str, contents: String) -> Result<String, Error> {
         Ok(_) => Ok(contents),
         Err(_) => Err(Error::WriteFailed(path.to_string())),
     }
+}
+
+pub fn load_session_data() -> SessionData {
+    let file = "tests/data/session_data.json";
+    let url = "https://atcoder.jp/home";
+
+    match fs::read_to_string(file) {
+        Ok(session_data) => serde_json::from_str(&session_data)
+            .map_err(|_| Error::InvalidSessionData(file.to_string())),
+        Err(_) => {
+            fetch_session_data(url).and_then(|session_data| {
+                match serde_json::to_string_pretty(&session_data) {
+                    Ok(session_data_json) => save(file, session_data_json).map(|_| session_data),
+                    Err(_) => Err(Error::InvalidSessionData(file.to_string())),
+                }
+            })
+        }
+    }
+    .expect("Error: Fail to load or fetch Session Data")
+}
+
+fn fetch_session_data(url: &str) -> Result<SessionData, Error> {
+    let agent = Agent::new();
+
+    println!("Fetching {url}");
+
+    agent
+        .get(url)
+        .call()
+        .map_err(|_| Error::FetchFailed(url.to_string()))?;
+
+    let cookies = agent.cookie_store().iter_unexpired().cloned().collect();
+    Ok(SessionData {
+        cookies,
+        csrf_token: "Dummy CSRF Token".to_string(),
+    })
 }
 
 #[cfg(test)]
