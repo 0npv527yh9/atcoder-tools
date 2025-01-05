@@ -4,7 +4,7 @@ use crate::{
 };
 use cookie_store::Cookie;
 use scraper::Html;
-use ureq::{serde::Serialize, Agent, Response};
+use ureq::{Agent, Response};
 
 pub struct HttpHandler {
     agent: Agent,
@@ -12,7 +12,7 @@ pub struct HttpHandler {
 }
 
 impl HttpHandler {
-    fn with_fetching(url: &str) -> Result<Self, Error> {
+    pub fn with_fetching(url: &str) -> Result<Self, Error> {
         let agent = Agent::new();
 
         let response = agent.get(url).call().map_err(Error::HttpError)?;
@@ -50,10 +50,10 @@ impl HttpHandler {
             .map_err(Error::HttpError)
     }
 
-    fn session_data(&self) -> SessionData {
+    pub fn into_session_data(self) -> SessionData {
         SessionData {
             cookies: self.cookies(),
-            csrf_token: self.csrf_token.clone(),
+            csrf_token: self.csrf_token,
         }
     }
 
@@ -67,7 +67,7 @@ impl HttpHandler {
 }
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
     HttpError(ureq::Error),
     CsrfTokenNotFound,
     TooLargeResponse,
@@ -133,7 +133,7 @@ mod tests {
 
         // Verify
         let expected = utils::test::load_session_data();
-        let actual = http_handler.session_data();
+        let actual = http_handler.into_session_data();
         assert_eq!(
             serde_json::to_string(&expected).unwrap(),
             serde_json::to_string(&actual).unwrap()
