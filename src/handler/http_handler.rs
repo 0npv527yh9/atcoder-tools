@@ -2,23 +2,23 @@ use crate::{
     dto::{cookie::IntoCookieStore, SessionData},
     parser::html_parser::HtmlParser,
 };
-use anyhow::Result;
 use cookie_store::Cookie;
 use scraper::Html;
-use std::fmt;
 use ureq::{serde::Serialize, Agent, Response};
 
-struct HttpHandler {
+pub struct HttpHandler {
     agent: Agent,
-    csrf_token: String,
+    pub csrf_token: String,
 }
 
 impl HttpHandler {
-    fn with_fetching(url: &str) -> Result<Self> {
+    fn with_fetching(url: &str) -> Result<Self, Error> {
         let agent = Agent::new();
 
-        let response = agent.get(url).call()?;
-        let html = response.into_string()?;
+        let response = agent.get(url).call().map_err(Error::HttpError)?;
+        let html = response
+            .into_string()
+            .map_err(|_| Error::TooLargeResponse)?;
 
         let csrf_token = (&Html::parse_document(&html))
             .csrf_token()
@@ -38,14 +38,13 @@ impl HttpHandler {
         Self { agent, csrf_token }
     }
 
-    fn get(&self, url: &str) -> Result<String> {
-        let response = self.agent.get(url).call()?;
-        let html = response.into_string()?;
-        Ok(html)
+    fn get(&self, url: &str) -> Result<String, Error> {
+        let response = self.agent.get(url).call().map_err(Error::HttpError)?;
+        response.into_string().map_err(|_| Error::TooLargeResponse)
     }
 
-    fn post(&self, url: &str, data: impl Serialize) -> Result<Response> {
-        Ok(self.agent.post(url).send_json(data)?)
+    pub fn post(&self, url: &str, data: impl Serialize) -> Result<Response, ureq::Error> {
+        self.agent.post(url).send_json(data)
     }
 
     fn session_data(&self) -> SessionData {
@@ -66,18 +65,10 @@ impl HttpHandler {
 
 #[derive(Debug)]
 enum Error {
+    HttpError(ureq::Error),
     CsrfTokenNotFound,
+    TooLargeResponse,
 }
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::CsrfTokenNotFound => write!(f, "CSRF Token Not Found"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
