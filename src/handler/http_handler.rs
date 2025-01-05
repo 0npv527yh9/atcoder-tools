@@ -43,8 +43,11 @@ impl HttpHandler {
         response.into_string().map_err(|_| Error::TooLargeResponse)
     }
 
-    pub fn post(&self, url: &str, data: impl Serialize) -> Result<Response, ureq::Error> {
-        self.agent.post(url).send_json(data)
+    pub fn post(&self, url: &str, data: &[(&str, &str)]) -> Result<Response, Error> {
+        self.agent
+            .post(url)
+            .send_form(data)
+            .map_err(Error::HttpError)
     }
 
     fn session_data(&self) -> SessionData {
