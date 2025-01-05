@@ -1,6 +1,5 @@
-use std::{fs, path::Path};
-
 use crate::dto::SessionData;
+use std::{fs, path::Path};
 use ureq::Agent;
 
 #[derive(Debug)]
