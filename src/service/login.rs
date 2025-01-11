@@ -44,6 +44,6 @@ impl LoginService {
 
 #[derive(Debug)]
 pub enum Error {
-    HttpHandlerError(http_handler::Error),
+    HttpHandlerError,
     IOError(std::io::Error),
 }
