@@ -57,7 +57,7 @@ mod dto {
         pub csrf_token: &'a str,
     }
 
-    impl<'a> From<LoginData<'a>> for [(&str, &'a str); 3] {
+    impl<'a> From<LoginData<'a>> for Vec<(&str, &'a str)> {
         fn from(
             LoginData {
                 username,
@@ -65,7 +65,7 @@ mod dto {
                 csrf_token,
             }: LoginData<'a>,
         ) -> Self {
-            [
+            vec![
                 ("username", username),
                 ("password", password),
                 ("csrf_token", csrf_token),

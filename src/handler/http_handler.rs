@@ -23,10 +23,10 @@ impl HttpHandler {
         Ok(response.into_string()?)
     }
 
-    pub fn post<'a, const N: usize>(
+    pub fn post<'a>(
         &self,
         url: &str,
-        data: impl Into<[(&'a str, &'a str); N]>,
+        data: impl Into<Vec<(&'static str, &'a str)>>,
     ) -> Result<Response> {
         Ok(self.agent.post(url).send_form(&data.into())?)
     }

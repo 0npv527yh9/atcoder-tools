@@ -47,4 +47,3 @@ pub enum Error {
     HttpHandlerError(http_handler::Error),
     IOError(std::io::Error),
 }
-
