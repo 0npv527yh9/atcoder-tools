@@ -1,13 +1,13 @@
 mod cli;
+mod dao;
 mod dto;
 mod handler;
 mod parser;
 mod service;
 mod utils;
 
-use cli::Error;
-
-fn main() -> Result<(), Error> {
+fn main() {
     let login_url = "https://atcoder.jp/login";
-    cli::run(login_url)
+    let session_data_file = "session_data.json";
+    cli::run(login_url, session_data_file);
 }

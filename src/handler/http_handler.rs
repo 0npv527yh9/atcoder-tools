@@ -1,63 +1,37 @@
-use crate::{
-    dto::{cookie::IntoCookieStore, SessionData},
-    parser::html_parser::HtmlParser,
-};
+use crate::dto::cookie::IntoCookieStore;
+use anyhow::Result;
 use cookie_store::Cookie;
-use scraper::Html;
 use ureq::{Agent, Response};
 
 pub struct HttpHandler {
     agent: Agent,
-    pub csrf_token: String,
 }
 
 impl HttpHandler {
-    pub fn with_fetching(url: &str) -> Result<Self, Error> {
-        let agent = Agent::new();
-
-        let response = agent.get(url).call().map_err(Error::HttpError)?;
-        let html = response
-            .into_string()
-            .map_err(|_| Error::TooLargeResponse)?;
-
-        let csrf_token = (&Html::parse_document(&html))
-            .csrf_token()
-            .ok_or(Error::CsrfTokenNotFound)?;
-
-        Ok(Self { agent, csrf_token })
+    pub fn new(agent: Agent) -> Self {
+        Self { agent }
     }
 
-    fn with_session_data(
-        SessionData {
-            cookies,
-            csrf_token,
-        }: SessionData,
-    ) -> Self {
+    fn with_cookies(cookies: Vec<Cookie<'static>>) -> Self {
         let cookie_store = cookies.into_cookie_store();
         let agent = ureq::builder().cookie_store(cookie_store).build();
-        Self { agent, csrf_token }
+        Self { agent }
     }
 
-    fn get(&self, url: &str) -> Result<String, Error> {
-        let response = self.agent.get(url).call().map_err(Error::HttpError)?;
-        response.into_string().map_err(|_| Error::TooLargeResponse)
+    pub fn get(&self, url: &str) -> Result<String> {
+        let response = self.agent.get(url).call()?;
+        Ok(response.into_string()?)
     }
 
-    pub fn post(&self, url: &str, data: &[(&str, &str)]) -> Result<Response, Error> {
-        self.agent
-            .post(url)
-            .send_form(data)
-            .map_err(Error::HttpError)
+    pub fn post<'a, const N: usize>(
+        &self,
+        url: &str,
+        data: impl Into<[(&'a str, &'a str); N]>,
+    ) -> Result<Response> {
+        Ok(self.agent.post(url).send_form(&data.into())?)
     }
 
-    pub fn into_session_data(self) -> SessionData {
-        SessionData {
-            cookies: self.cookies(),
-            csrf_token: self.csrf_token,
-        }
-    }
-
-    fn cookies(&self) -> Vec<Cookie<'static>> {
+    pub fn into_cookies(self) -> Vec<Cookie<'static>> {
         self.agent
             .cookie_store()
             .iter_unexpired()
