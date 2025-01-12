@@ -1,5 +1,6 @@
 mod login;
 
+use crate::config::Config;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -13,19 +14,8 @@ enum Command {
     Login,
 }
 
-pub fn run(login_url: &str, session_data_file: &str) {
+pub fn run(config: Config) {
     match Cli::parse().command {
-        Command::Login => login::login(login_url, session_data_file),
-    }
-    .ignore()
-}
-
-trait Ignore {
-    fn ignore(self);
-}
-
-impl Ignore for Result<(), ()> {
-    fn ignore(self) {
-        let _ = self;
+        Command::Login => login::login(&config.url.login, &config.file.session_data),
     }
 }
