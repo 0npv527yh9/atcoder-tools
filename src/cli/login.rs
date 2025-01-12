@@ -3,9 +3,15 @@ use ureq::Agent;
 
 pub fn login(url: &str, session_data_file: &str) {
     let http_handler = HttpHandler::new(Agent::new());
-    let dao = Dao::with_fetching(http_handler, url).unwrap();
+    let csrf_token = Dao::fetch_csrf_token(&http_handler, url).unwrap();
+    let dao = Dao::new(http_handler, csrf_token);
     let login_service = LoginService::new(dao);
 
-    login_service.login(url).unwrap();
-    login_service.save(session_data_file).unwrap();
+    let result = login_service.login(url);
+    if let Err(e) = result {
+        println!("{e}");
+        return;
+    }
+
+    login_service.save(session_data_file).unwrap()
 }

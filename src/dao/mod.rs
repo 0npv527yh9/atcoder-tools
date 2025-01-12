@@ -6,7 +6,6 @@ use crate::{
 use anyhow::{anyhow, Result};
 use dto::LoginData;
 use scraper::Html;
-use ureq::Response;
 
 pub struct Dao {
     http_handler: HttpHandler,
@@ -14,29 +13,36 @@ pub struct Dao {
 }
 
 impl Dao {
-    pub fn with_fetching(http_handler: HttpHandler, url: &str) -> Result<Self> {
-        let html = http_handler.get(url)?;
-        let csrf_token = (&Html::parse_document(&html))
-            .csrf_token()
-            .ok_or(anyhow!("CSRF Token Not Found"))?;
-
-        Ok(Self {
+    pub fn new(http_handler: HttpHandler, csrf_token: String) -> Self {
+        Self {
             http_handler,
             csrf_token,
-        })
+        }
     }
 
-    pub fn login(
-        &self,
-        Credentials { username, password }: Credentials,
-        url: &str,
-    ) -> Result<Response> {
+    pub fn fetch_csrf_token(http_handler: &HttpHandler, url: &str) -> Result<String> {
+        let html = http_handler.get(url)?;
+        (&Html::parse_document(&html))
+            .csrf_token()
+            .ok_or(anyhow!("CSRF Token Not Found"))
+    }
+
+    pub fn login(&self, Credentials { username, password }: Credentials, url: &str) -> Result<()> {
         let login_data = LoginData {
             username: &username,
             password: &password,
             csrf_token: &self.csrf_token,
         };
-        self.http_handler.post(url, login_data)
+
+        let response = self.http_handler.post(url, login_data)?;
+
+        let html = response.into_string()?;
+        let html = Html::parse_document(&html);
+        match (&html).title() {
+            Some(title) if title == "AtCoder" => Ok(()),
+            Some(_) => Err(anyhow!("Login Failed")),
+            None => Err(anyhow!("<title> Not Found")),
+        }
     }
 
     pub fn into_session_data(self) -> SessionData {
@@ -71,5 +77,30 @@ mod dto {
                 ("csrf_token", csrf_token),
             ]
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ureq::Agent;
+
+    #[test]
+    #[ignore]
+    fn test_login() {
+        // Setup
+        let http_handler = HttpHandler::new(Agent::new());
+        let url = "https://atcoder.jp/login";
+        let csrf_token = Dao::fetch_csrf_token(&http_handler, url).unwrap();
+        let dao = Dao::new(http_handler, csrf_token);
+
+        let username = rprompt::prompt_reply("username:").unwrap();
+        let password = rpassword::prompt_password("password:").unwrap();
+
+        // Run
+        let response = dao.login(Credentials { username, password }, url);
+
+        // Verify
+        assert!(response.is_ok())
     }
 }
