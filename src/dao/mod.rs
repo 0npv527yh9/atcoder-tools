@@ -1,9 +1,11 @@
 use crate::{
     dto::SessionData,
-    handler::{http_handler::HttpHandler, terminal_handler::Credentials},
+    handler::{
+        http_handler::{self, HttpHandler},
+        terminal_handler::Credentials,
+    },
     parser::html_parser::HtmlParser,
 };
-use anyhow::{anyhow, Result};
 use dto::LoginData;
 use scraper::Html;
 
@@ -20,14 +22,18 @@ impl Dao {
         }
     }
 
-    pub fn fetch_csrf_token(http_handler: &HttpHandler, url: &str) -> Result<String> {
+    pub fn fetch_csrf_token(http_handler: &HttpHandler, url: &str) -> Result<String, Error> {
         let html = http_handler.get(url)?;
         (&Html::parse_document(&html))
             .csrf_token()
-            .ok_or(anyhow!("CSRF Token Not Found"))
+            .ok_or(Error::CsrfTokenNotFound)
     }
 
-    pub fn login(&self, Credentials { username, password }: Credentials, url: &str) -> Result<()> {
+    pub fn login(
+        &self,
+        Credentials { username, password }: Credentials,
+        url: &str,
+    ) -> Result<(), Error> {
         let login_data = LoginData {
             username: &username,
             password: &password,
@@ -36,12 +42,14 @@ impl Dao {
 
         let response = self.http_handler.post(url, login_data)?;
 
-        let html = response.into_string()?;
+        let html = response
+            .into_string()
+            .map_err(|_| Error::Others("Too large response".to_string()))?;
         let html = Html::parse_document(&html);
         match (&html).title() {
             Some(title) if title == "AtCoder" => Ok(()),
-            Some(_) => Err(anyhow!("Login Failed")),
-            None => Err(anyhow!("<title> Not Found")),
+            Some(_) => Err(Error::LoginFailed),
+            None => Err(Error::Others("<title> Not Found".to_string())),
         }
     }
 
@@ -78,6 +86,21 @@ mod dto {
             ]
         }
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("CSRF Token Not Found")]
+    CsrfTokenNotFound,
+
+    #[error(transparent)]
+    HttpHandler(#[from] http_handler::Error),
+
+    #[error("Login failed")]
+    LoginFailed,
+
+    #[error("{}", .0)]
+    Others(String),
 }
 
 #[cfg(test)]
