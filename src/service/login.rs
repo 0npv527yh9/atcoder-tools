@@ -14,20 +14,16 @@ impl LoginService {
     }
 
     pub fn login(&self, url: &str) -> Result<(), Error> {
-        loop {
-            let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
+        let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
 
-            match self.dao.login(credentials, url) {
-                Ok(()) => return Ok(()),
-                Err(error) => {
-                    let should_retry =
-                        terminal_handler::ask_for_retry().map_err(Error::Terminal)?;
-                    if !should_retry {
-                        return Err(Error::Dao(error));
-                    }
-                }
+        self.dao.login(credentials, url).or_else(|error| {
+            let should_retry = terminal_handler::ask_for_retry().map_err(Error::Terminal)?;
+            if should_retry {
+                self.login(url)
+            } else {
+                Err(Error::Dao(error))
             }
-        }
+        })
     }
 
     pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
