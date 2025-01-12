@@ -12,21 +12,19 @@ impl IntoCookieStore for Vec<Cookie<'static>> {
 }
 
 #[cfg(test)]
-trait IntoCookies {
-    fn into_cookies(self) -> Vec<Cookie<'static>>;
-}
-
-#[cfg(test)]
-impl IntoCookies for CookieStore {
-    fn into_cookies(self) -> Vec<Cookie<'static>> {
-        self.iter_unexpired().cloned().collect()
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
     use crate::utils;
+
+    trait IntoCookies {
+        fn into_cookies(self) -> Vec<Cookie<'static>>;
+    }
+
+    impl IntoCookies for CookieStore {
+        fn into_cookies(self) -> Vec<Cookie<'static>> {
+            self.iter_unexpired().cloned().collect()
+        }
+    }
 
     #[test]
     fn test_into_cookie_store() {
