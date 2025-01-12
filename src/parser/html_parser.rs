@@ -1,23 +1,23 @@
 use scraper::{error::SelectorErrorKind, selectable::Selectable, ElementRef, Selector};
 
-pub trait HtmlParser<'a> {
-    fn csrf_token(&'a self) -> Option<String>;
-    fn title(&'a self) -> Option<String>;
+pub trait HtmlParser {
+    fn csrf_token(self) -> Option<String>;
+    fn title(self) -> Option<String>;
 }
 
-impl<'a, T> HtmlParser<'a> for T
+impl<'a, T> HtmlParser for T
 where
-    T: Selectable<'a> + Copy,
+    T: Select<'a>,
 {
-    fn csrf_token(&'a self) -> Option<String> {
+    fn csrf_token(self) -> Option<String> {
         self.select_one("[name=csrf_token]")
             .ok()
             .flatten()
-            .and_then(|e| e.attr("value"))
+            .and_then(|element| element.attr("value"))
             .map(Into::into)
     }
 
-    fn title(&'a self) -> Option<String> {
+    fn title(self) -> Option<String> {
         self.select_one("title")
             .ok()
             .flatten()
@@ -25,26 +25,40 @@ where
     }
 }
 
-trait Select<'a>: Selectable<'a> + Copy {
-    fn select_one<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'b>> {
+trait Select<'a> {
+    fn select_one(
+        self,
+        selectors: &'static str,
+    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'static>>;
+
+    fn select_all(
+        self,
+        selectors: &'static str,
+    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'static>>;
+}
+
+impl<'a, T> Select<'a> for T
+where
+    T: Selectable<'a>,
+{
+    fn select_one(
+        self,
+        selectors: &'static str,
+    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'static>> {
         let selector = Selector::parse(selectors)?;
         let element = self.select(&selector).next();
         Ok(element)
     }
 
-    fn select_all<'b>(
-        &'a self,
-        selectors: &'b str,
-    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'b>> {
+    fn select_all(
+        self,
+        selectors: &'static str,
+    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'static>> {
         let selector = Selector::parse(selectors)?;
-        Ok(self.select(&selector).collect())
+        let elements = self.select(&selector).collect();
+        Ok(elements)
     }
 }
-
-impl<'a, T: Selectable<'a> + Copy> Select<'a> for T {}
 
 #[cfg(test)]
 mod tests {
