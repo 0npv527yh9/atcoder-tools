@@ -8,10 +8,13 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.23", features = ["derive"] }
 cookie_store = "0.21.0"
+itertools = "0.14.0"
 rpassword = "7.3.1"
 rprompt = "2.1.1"
 scraper = "0.20.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
+thiserror = "2.0.11"
+toml = "0.8.19"
 ureq = { version = "2.10.1", features = ["json", "cookies"] }
 url = "2.5.2"

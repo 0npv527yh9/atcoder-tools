@@ -1,70 +1,50 @@
-use crate::handler::http_handler::{self, HttpHandler};
-use dto::LoginData;
+use crate::{
+    dao::{self, Dao},
+    handler::terminal_handler,
+};
 use std::fs;
-use ureq::Response;
 
 pub struct LoginService {
-    pub handler: HttpHandler,
-    pub url: String,
+    dao: Dao,
 }
 
 impl LoginService {
-    pub fn with_fetching(url: &str) -> Result<Self, Error> {
-        let handler = HttpHandler::with_fetching(url).map_err(Error::HttpHandlerError)?;
-        Ok(Self {
-            handler,
-            url: url.to_string(),
+    pub fn new(dao: Dao) -> Self {
+        Self { dao }
+    }
+
+    pub fn login(&self, url: &str) -> Result<(), Error> {
+        let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
+
+        self.dao.login(credentials, url).or_else(|error| {
+            let should_retry = terminal_handler::ask_for_retry().map_err(Error::Terminal)?;
+            if should_retry {
+                self.login(url)
+            } else {
+                Err(Error::Dao(error))
+            }
         })
     }
 
-    pub fn login(&self, username: &str, password: &str) -> Result<Response, Error> {
-        let login_data = LoginData {
-            username,
-            password,
-            csrf_token: &self.handler.csrf_token,
-        };
-        self.handler
-            .post(&self.url, &login_data.into_pairs())
-            .map_err(|e| Error::HttpHandlerError(e))
-    }
+    pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
+        let session_data = self.dao.into_session_data();
 
-    pub fn save_session_data(self) -> Result<(), std::io::Error> {
-        let session_data = self.handler.into_session_data();
-        fs::write(
-            "session_data.json",
-            serde_json::to_string(&session_data).expect(""),
-        )
+        let contents = serde_json::to_string_pretty(&session_data)
+            .map_err(|_| Error::Others("Session Data Serialization Failed".to_string()))?;
+
+        fs::write(file_path, contents)
+            .map_err(|_| Error::Others("Failed to save session data".to_string()))
     }
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
-    HttpHandlerError(http_handler::Error),
-    IOError(std::io::Error),
-}
+    #[error(transparent)]
+    Dao(#[from] dao::Error),
 
-mod dto {
-    use serde::Serialize;
+    #[error("Terminal Input Error: {:?}", .0)]
+    Terminal(#[source] std::io::Error),
 
-    #[derive(Serialize)]
-    pub struct LoginData<'a> {
-        pub username: &'a str,
-        pub password: &'a str,
-        pub csrf_token: &'a str,
-    }
-
-    impl<'a> LoginData<'a> {
-        pub fn into_pairs(self) -> [(&'a str, &'a str); 3] {
-            let LoginData {
-                username,
-                password,
-                csrf_token,
-            } = self;
-            [
-                ("username", username),
-                ("password", password),
-                ("csrf_token", csrf_token),
-            ]
-        }
-    }
+    #[error("{}", .0)]
+    Others(String),
 }

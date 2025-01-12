@@ -7,6 +7,7 @@ pub enum Error {
     FetchFailed(String),
     InvalidHtml(String),
     WriteFailed(String),
+    ReadFailed(String),
     InvalidSessionData(String),
 }
 
@@ -41,10 +42,9 @@ fn fetch_html(url: &str) -> Result<String, Error> {
         .get(url)
         .call()
         .map_err(|_| Error::FetchFailed(url.to_string()))
-        .and_then(|response| {
-            response
-                .into_string()
-                .map_err(|_| Error::InvalidHtml(url.to_string()))
+        .and_then(|response| match response.into_string() {
+            Ok(html) => Ok(html.replace("\r", "")),
+            Err(_) => Err(Error::InvalidHtml(url.to_string())),
         })
 }
 
