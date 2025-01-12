@@ -33,7 +33,7 @@ impl LoginService {
     pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
         let session_data = self.dao.into_session_data();
 
-        let contents = serde_json::to_string(&session_data)
+        let contents = serde_json::to_string_pretty(&session_data)
             .map_err(|_| Error::Others("Session Data Serialization Failed".to_string()))?;
 
         fs::write(file_path, contents)
