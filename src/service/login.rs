@@ -18,11 +18,11 @@ impl LoginService {
             let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
 
             match self.dao.login(credentials, url) {
-                Ok(()) => {
-                    return Ok(());
-                }
+                Ok(()) => return Ok(()),
                 Err(error) => {
-                    if !terminal_handler::ask_for_retry().map_err(Error::Terminal)? {
+                    let should_retry =
+                        terminal_handler::ask_for_retry().map_err(Error::Terminal)?;
+                    if !should_retry {
                         return Err(Error::Dao(error));
                     }
                 }

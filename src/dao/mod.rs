@@ -44,7 +44,7 @@ impl Dao {
 
         let html = response
             .into_string()
-            .map_err(|_| Error::Others("Too large response".to_string()))?;
+            .map_err(|_| Error::Others("Too Large Response".to_string()))?;
         let html = Html::parse_document(&html);
         match (&html).title() {
             Some(title) if title == "AtCoder" => Ok(()),

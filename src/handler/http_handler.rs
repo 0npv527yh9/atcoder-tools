@@ -45,7 +45,7 @@ pub enum Error {
     #[error("HTTP Error: {:?}", .0)]
     HttpError(#[source] Box<ureq::Error>),
 
-    #[error("Too large response")]
+    #[error("Too Large Response")]
     TooLargeResponse(#[from] std::io::Error),
 }
 
