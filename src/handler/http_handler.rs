@@ -1,5 +1,4 @@
 use crate::dto::cookie::IntoCookieStore;
-use anyhow::Result;
 use cookie_store::Cookie;
 use ureq::{Agent, Response};
 
@@ -18,16 +17,17 @@ impl HttpHandler {
         Self { agent }
     }
 
-    pub fn get(&self, url: &str) -> Result<String> {
+    pub fn get(&self, url: &str) -> Result<String, Error> {
         let response = self.agent.get(url).call()?;
-        Ok(response.into_string()?.replace("\r", ""))
+        let html = response.into_string()?.replace("\r", "");
+        Ok(html)
     }
 
     pub fn post<'a>(
         &self,
         url: &str,
         data: impl Into<Vec<(&'static str, &'a str)>>,
-    ) -> Result<Response> {
+    ) -> Result<Response, Error> {
         Ok(self.agent.post(url).send_form(&data.into())?)
     }
 
@@ -40,11 +40,19 @@ impl HttpHandler {
     }
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
-    HttpError(ureq::Error),
-    CsrfTokenNotFound,
-    TooLargeResponse,
+    #[error("HTTP Error: {:?}", .0)]
+    HttpError(#[source] Box<ureq::Error>),
+
+    #[error("Too large response")]
+    TooLargeResponse(#[from] std::io::Error),
+}
+
+impl From<ureq::Error> for Error {
+    fn from(value: ureq::Error) -> Self {
+        Error::HttpError(Box::new(value))
+    }
 }
 
 #[cfg(test)]
