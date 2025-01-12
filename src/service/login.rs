@@ -1,5 +1,7 @@
-use crate::{dao::Dao, handler::terminal_handler};
-use anyhow::Result;
+use crate::{
+    dao::{self, Dao},
+    handler::terminal_handler,
+};
 use std::fs;
 
 pub struct LoginService {
@@ -11,39 +13,42 @@ impl LoginService {
         Self { dao }
     }
 
-    pub fn login(&self, url: &str) -> Result<()> {
+    pub fn login(&self, url: &str) -> Result<(), Error> {
         loop {
-            let credentials = terminal_handler::read_credentials()?;
+            let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
 
             match self.dao.login(credentials, url) {
-                Ok(_) => {
-                    println!("Login Success");
+                Ok(()) => {
                     return Ok(());
                 }
-                Err(_) => {
-                    if !terminal_handler::ask_for_retry()? {
-                        return Err(anyhow::anyhow!("Login Failed"));
+                Err(error) => {
+                    if !terminal_handler::ask_for_retry().map_err(Error::Terminal)? {
+                        return Err(Error::Dao(error));
                     }
                 }
             }
         }
     }
 
-    pub fn save(self, file_path: &str) -> Result<()> {
-        self.save_session_data(file_path)
-    }
-
-    fn save_session_data(self, file_path: &str) -> Result<()> {
+    pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
         let session_data = self.dao.into_session_data();
-        Ok(fs::write(
-            file_path,
-            serde_json::to_string(&session_data).expect("Serialization failed"),
-        )?)
+
+        let contents = serde_json::to_string(&session_data)
+            .map_err(|_| Error::Others("Session Data Serialization Failed".to_string()))?;
+
+        fs::write(file_path, contents)
+            .map_err(|_| Error::Others("Failed to save session data".to_string()))
     }
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
-    HttpHandlerError,
-    IOError(std::io::Error),
+    #[error(transparent)]
+    Dao(#[from] dao::Error),
+
+    #[error("Terminal Input Error: {:?}", .0)]
+    Terminal(#[source] std::io::Error),
+
+    #[error("{}", .0)]
+    Others(String),
 }

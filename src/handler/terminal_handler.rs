@@ -1,4 +1,4 @@
-use anyhow::Result;
+use std::io::Result;
 
 pub fn read_credentials() -> Result<Credentials> {
     let username = rprompt::prompt_reply("Username:")?;

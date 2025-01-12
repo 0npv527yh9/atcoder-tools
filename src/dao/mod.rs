@@ -96,7 +96,7 @@ pub enum Error {
     #[error(transparent)]
     HttpHandler(#[from] http_handler::Error),
 
-    #[error("Login failed")]
+    #[error("Login Failed")]
     LoginFailed,
 
     #[error("{}", .0)]

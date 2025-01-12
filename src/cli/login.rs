@@ -12,6 +12,13 @@ pub fn login(url: &str, session_data_file: &str) -> Result<(), ()> {
         .login(url)
         .map_err(|error| println!("{error}"))?;
 
-    login_service.save(session_data_file).unwrap();
+    println!("Login Successful");
+
+    login_service
+        .save_session_data(session_data_file)
+        .map_err(|error| println!("{error}"))?;
+
+    println!("{session_data_file} Created");
+
     Ok(())
 }
