@@ -1,7 +1,6 @@
-use itertools::Itertools;
-use scraper::{error::SelectorErrorKind, selectable::Selectable, ElementRef, Html, Selector};
-
 use crate::dto::{TestCase, TestSuite};
+use itertools::Itertools;
+use scraper::{selectable::Selectable, ElementRef, Html, Selector};
 
 pub trait HtmlParser {
     fn csrf_token(&self) -> Option<String>;
@@ -12,17 +11,12 @@ pub trait HtmlParser {
 impl HtmlParser for Html {
     fn csrf_token(&self) -> Option<String> {
         self.select_one("[name=csrf_token]")
-            .ok()
-            .flatten()
             .and_then(|element| element.attr("value"))
             .map(Into::into)
     }
 
     fn title(&self) -> Option<String> {
-        self.select_one("title")
-            .ok()
-            .flatten()
-            .map(|element| element.inner_html())
+        self.select_one("title").map(|element| element.inner_html())
     }
 
     fn test_suites(&self) -> Vec<TestSuite> {
@@ -49,7 +43,6 @@ impl HtmlParser for Html {
 
 fn parse_task_elements(html: &Html) -> Vec<TaskTag<'_>> {
     html.select_all("span.h2")
-        .unwrap()
         .into_iter()
         .map(TitleTag)
         .filter_map(Into::into)
@@ -72,20 +65,19 @@ impl<'a> From<TitleTag<'a>> for Option<TaskTag<'a>> {
 
 impl<'a> TaskTag<'a> {
     fn title_tag(&self) -> Option<TitleTag<'a>> {
-        self.0.select_one("span.h2").unwrap().map(TitleTag)
+        self.0.select_one("span.h2").map(TitleTag)
     }
 
     fn test_case_tags(&self) -> Vec<TestCaseTag<'a>> {
         let test_case_labels = self
             .0
             .select_all("h3")
-            .unwrap()
             .into_iter()
             .filter(|h3| h3.inner_html().starts_with("Sample "));
 
         test_case_labels
             .filter_map(|label| ElementRef::wrap(label.parent()?))
-            .filter_map(|parent| parent.select_one("pre").unwrap())
+            .filter_map(|parent| parent.select_one("pre"))
             .map(TestCaseTag)
             .collect()
     }
@@ -108,37 +100,24 @@ impl TestCaseTag<'_> {
 }
 
 trait Select<'a> {
-    fn select_one(
-        self,
-        selectors: &'static str,
-    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'static>>;
-
-    fn select_all(
-        self,
-        selectors: &'static str,
-    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'static>>;
+    fn select_one(self, selectors: &str) -> Option<ElementRef<'a>>;
+    fn select_all(self, selectors: &str) -> Vec<ElementRef<'a>>;
 }
 
 impl<'a, T> Select<'a> for T
 where
     T: Selectable<'a>,
 {
-    fn select_one(
-        self,
-        selectors: &'static str,
-    ) -> Result<Option<ElementRef<'a>>, SelectorErrorKind<'static>> {
-        let selector = Selector::parse(selectors)?;
+    fn select_one(self, selectors: &str) -> Option<ElementRef<'a>> {
+        let selector = Selector::parse(selectors).expect("Invalid Selector");
         let element = self.select(&selector).next();
-        Ok(element)
+        element
     }
 
-    fn select_all(
-        self,
-        selectors: &'static str,
-    ) -> Result<Vec<ElementRef<'a>>, SelectorErrorKind<'static>> {
-        let selector = Selector::parse(selectors)?;
+    fn select_all(self, selectors: &str) -> Vec<ElementRef<'a>> {
+        let selector = Selector::parse(selectors).expect("Invalid Selector");
         let elements = self.select(&selector).collect();
-        Ok(elements)
+        elements
     }
 }
 
