@@ -4,7 +4,7 @@ use crate::{
         http_handler::{self, HttpHandler},
         terminal_handler::Credentials,
     },
-    parser::html_parser::HtmlParser,
+    parser::html_parser::{HtmlParser, TasksHtml},
 };
 use dto::{LoginData, TaskUrl};
 use scraper::Html;
@@ -56,6 +56,14 @@ impl Dao {
     pub fn fetch_test_suites(&self, url: TaskUrl) -> Result<Vec<TestSuite>, Error> {
         let html = self.http_handler.get(&url.url())?;
         Ok(Html::parse_document(&html).test_suites())
+    }
+
+    pub fn fetch_task_screen_names(&self, contest_url: &str) -> Result<Vec<String>, Error> {
+        let tasks_url = format!("{contest_url}/tasks");
+        let html = self.http_handler.get(&tasks_url)?;
+        let html = Html::parse_document(&html);
+        let html = TasksHtml(html);
+        Ok(html.task_screen_names())
     }
 
     pub fn into_session_data(self) -> SessionData {
