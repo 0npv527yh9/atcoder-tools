@@ -53,9 +53,9 @@ impl Dao {
         }
     }
 
-    pub fn fetch_test_suites(&self, url: TaskUrl) -> Vec<TestSuite> {
-        let html = self.http_handler.get(&url.url()).unwrap();
-        Html::parse_document(&html).test_suites()
+    pub fn fetch_test_suites(&self, url: TaskUrl) -> Result<Vec<TestSuite>, Error> {
+        let html = self.http_handler.get(&url.url())?;
+        Ok(Html::parse_document(&html).test_suites())
     }
 
     pub fn into_session_data(self) -> SessionData {
@@ -154,7 +154,7 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(url);
+        let test_suites = dao.fetch_test_suites(url).unwrap();
 
         // Verify
         println!("{test_suites:#?}");
@@ -171,7 +171,7 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(url);
+        let test_suites = dao.fetch_test_suites(url).unwrap();
 
         // Verify
         println!("{test_suites:#?}");
