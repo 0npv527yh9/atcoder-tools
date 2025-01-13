@@ -20,3 +20,10 @@ pub struct TestSuite {
     pub task: String,
     pub test_cases: Vec<TestCase>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct TaskInfo {
+    pub task: String,
+    pub contest_url: String,
+    pub task_screen_name: String,
+}
