@@ -1,12 +1,12 @@
 use crate::{
-    dto::SessionData,
+    dto::{SessionData, TestSuite},
     handler::{
         http_handler::{self, HttpHandler},
         terminal_handler::Credentials,
     },
     parser::html_parser::HtmlParser,
 };
-use dto::LoginData;
+use dto::{LoginData, TaskUrl};
 use scraper::Html;
 
 pub struct Dao {
@@ -53,6 +53,11 @@ impl Dao {
         }
     }
 
+    pub fn fetch_test_suites(&self, url: TaskUrl) -> Vec<TestSuite> {
+        let html = self.http_handler.get(&url.url()).unwrap();
+        Html::parse_document(&html).test_suites()
+    }
+
     pub fn into_session_data(self) -> SessionData {
         SessionData {
             cookies: self.http_handler.into_cookies(),
@@ -61,11 +66,11 @@ impl Dao {
     }
 }
 
-mod dto {
+pub mod dto {
     use serde::Serialize;
 
     #[derive(Serialize)]
-    pub struct LoginData<'a> {
+    pub(super) struct LoginData<'a> {
         pub username: &'a str,
         pub password: &'a str,
         pub csrf_token: &'a str,
@@ -84,6 +89,19 @@ mod dto {
                 ("password", password),
                 ("csrf_token", csrf_token),
             ]
+        }
+    }
+
+    pub enum TaskUrl {
+        TasksPrint(String),
+        Task(String),
+    }
+
+    impl TaskUrl {
+        pub fn url(self) -> String {
+            match self {
+                TaskUrl::TasksPrint(url) | TaskUrl::Task(url) => url,
+            }
         }
     }
 }
@@ -125,5 +143,38 @@ mod tests {
 
         // Verify
         assert!(response.is_ok())
+    }
+
+    #[test]
+    #[ignore]
+    fn test_fetch_test_suites_task_page() {
+        // Setup
+        let http_handler = HttpHandler::new(Agent::new());
+        let url = TaskUrl::Task("https://atcoder.jp/contests/abc388/tasks/abc388_a".to_string());
+        let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
+
+        // Run
+        let test_suites = dao.fetch_test_suites(url);
+
+        // Verify
+        println!("{test_suites:#?}");
+        assert_eq!(1, test_suites.len());
+        assert_eq!(2, test_suites[0].test_cases.len());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_fetch_test_suites_tasks_print() {
+        // Setup
+        let http_handler = HttpHandler::new(Agent::new());
+        let url = TaskUrl::TasksPrint("https://atcoder.jp/contests/abc388/tasks_print".to_string());
+        let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
+
+        // Run
+        let test_suites = dao.fetch_test_suites(url);
+
+        // Verify
+        println!("{test_suites:#?}");
+        assert_eq!(7, test_suites.len());
     }
 }
