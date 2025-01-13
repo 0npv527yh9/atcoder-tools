@@ -17,18 +17,18 @@ jobs:
       - name: Check code formatting
         run: cargo fmt --check
 
-  build:
+  # build:
+  #   runs-on: ubuntu-latest
+  #   needs: format
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Build
+  #       run: cargo build --verbose
+
+  test:
     runs-on: ubuntu-latest
     needs: format
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --verbose
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
       - name: Run tests
-        run: cargo test --verbose -- --show-output
+        run: cargo test --verbose -- --show-output --test-threads=1
