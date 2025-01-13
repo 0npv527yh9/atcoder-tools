@@ -1,5 +1,6 @@
 use crate::dto::{TestCase, TestSuite};
 use itertools::Itertools;
+use regex::Regex;
 use scraper::{selectable::Selectable, ElementRef, Html, Selector};
 
 pub trait HtmlParser {
@@ -94,6 +95,24 @@ impl TitleTag<'_> {
 impl TestCaseTag<'_> {
     fn test_case(&self) -> String {
         self.0.inner_html()
+    }
+}
+
+pub struct TasksHtml(pub Html);
+
+impl TasksHtml {
+    pub fn task_screen_names(&self) -> Vec<String> {
+        let pattern = Regex::new(r"^/contests/[^/]+/tasks/([^/]+)$").unwrap();
+
+        let submit_url_tags = self.0.select_all("table > tbody > tr > td:first-child > a");
+
+        let submit_urls = submit_url_tags
+            .into_iter()
+            .filter_map(|a_tag| a_tag.attr("href"));
+
+        submit_urls
+            .filter_map(|url| Some(pattern.captures(url)?.get(1)?.as_str().to_string()))
+            .collect()
     }
 }
 
@@ -215,5 +234,20 @@ mod tests {
         // Verify
         println!("{test_cases:#?}");
         assert_eq!(7, test_cases.len());
+    }
+
+    #[test]
+    fn test_task_screen_names() {
+        // Setup
+        let html = utils::test::load_tasks_html();
+        let html = Html::parse_document(&html);
+        let html = TasksHtml(html);
+
+        // Run
+        let task_screen_names = html.task_screen_names();
+
+        // Verify
+        println!("{task_screen_names:#?}");
+        assert_eq!(7, task_screen_names.len());
     }
 }

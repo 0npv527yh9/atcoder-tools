@@ -23,6 +23,12 @@ pub fn load_contest_page_html() -> String {
     load_html(file, url)
 }
 
+pub fn load_tasks_html() -> String {
+    let file = "tests/data/tasks.html";
+    let url = "https://atcoder.jp/contests/abc386/tasks";
+    load_html(file, url)
+}
+
 pub fn load_task_print_html() -> String {
     let file = "tests/data/task_print.html";
     let url = "https://atcoder.jp/contests/abc386/tasks_print";
