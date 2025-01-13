@@ -8,3 +8,15 @@ pub struct SessionData {
     pub cookies: Vec<Cookie<'static>>,
     pub csrf_token: String,
 }
+
+#[derive(Debug)]
+pub struct TestCase {
+    pub input: String,
+    pub output: String,
+}
+
+#[derive(Debug)]
+pub struct TestSuite {
+    pub task: String,
+    pub test_cases: Vec<TestCase>,
+}
