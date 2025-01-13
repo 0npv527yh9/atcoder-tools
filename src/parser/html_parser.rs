@@ -20,32 +20,27 @@ impl HtmlParser for Html {
     }
 
     fn test_suites(&self) -> Vec<TestSuite> {
-        let task_tags = parse_task_elements(self);
-        task_tags
+        parse_task_tags(self)
             .into_iter()
             .filter_map(|task_tag| {
-                let title = task_tag.title_tag()?.title()?;
-                let test_cases = task_tag
-                    .test_case_tags()
-                    .iter()
-                    .map(TestCaseTag::test_case)
-                    .tuples()
-                    .map(|(input, output)| TestCase { input, output })
-                    .collect();
                 Some(TestSuite {
-                    task: title,
-                    test_cases,
+                    task: task_tag.title()?,
+                    test_cases: task_tag.test_cases(),
                 })
             })
             .collect()
     }
 }
 
-fn parse_task_elements(html: &Html) -> Vec<TaskTag<'_>> {
+fn parse_task_tags(html: &Html) -> Vec<TaskTag<'_>> {
+    fn title_to_task(title_tag: TitleTag<'_>) -> Option<TaskTag<'_>> {
+        Some(TaskTag(ElementRef::wrap(title_tag.0.parent()?)?))
+    }
+
     html.select_all("span.h2")
         .into_iter()
         .map(TitleTag)
-        .filter_map(Into::into)
+        .filter_map(title_to_task)
         .collect()
 }
 
@@ -57,15 +52,9 @@ struct TitleTag<'a>(ElementRef<'a>);
 #[derive(Debug)]
 struct TestCaseTag<'a>(ElementRef<'a>);
 
-impl<'a> From<TitleTag<'a>> for Option<TaskTag<'a>> {
-    fn from(tag: TitleTag<'a>) -> Self {
-        Some(TaskTag(ElementRef::wrap(tag.0.parent()?)?))
-    }
-}
-
 impl<'a> TaskTag<'a> {
-    fn title_tag(&self) -> Option<TitleTag<'a>> {
-        self.0.select_one("span.h2").map(TitleTag)
+    fn title(&self) -> Option<String> {
+        self.0.select_one("span.h2").map(TitleTag)?.title()
     }
 
     fn test_case_tags(&self) -> Vec<TestCaseTag<'a>> {
@@ -79,6 +68,15 @@ impl<'a> TaskTag<'a> {
             .filter_map(|label| ElementRef::wrap(label.parent()?))
             .filter_map(|parent| parent.select_one("pre"))
             .map(TestCaseTag)
+            .collect()
+    }
+
+    fn test_cases(&self) -> Vec<TestCase> {
+        self.test_case_tags()
+            .iter()
+            .map(TestCaseTag::test_case)
+            .tuples::<(_, _)>()
+            .map(|(input, output)| TestCase { input, output })
             .collect()
     }
 }
@@ -160,13 +158,13 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_task_elements() {
+    fn test_parse_task_tags() {
         // Setup
         let html = utils::test::load_task_print_html();
         let html = Html::parse_document(&html);
 
         // Run
-        let task_tags = parse_task_elements(&html);
+        let task_tags = parse_task_tags(&html);
 
         // Verify
         println!("{:?}", task_tags);
@@ -178,12 +176,12 @@ mod tests {
         // Setup
         let html = utils::test::load_task_print_html();
         let html = Html::parse_document(&html);
-        let task_tags = parse_task_elements(&html);
+        let task_tags = parse_task_tags(&html);
 
         // Run
         let titles = task_tags
             .iter()
-            .filter_map(|task_tag| task_tag.title_tag()?.title())
+            .filter_map(|task_tag| task_tag.title())
             .collect_vec();
 
         // Verify
@@ -195,7 +193,7 @@ mod tests {
         // Setup
         let html = utils::test::load_task_print_html();
         let html = Html::parse_document(&html);
-        let task_tag = &parse_task_elements(&html)[0];
+        let task_tag = &parse_task_tags(&html)[0];
 
         // Run
         let test_case_tags = task_tag.test_case_tags();
