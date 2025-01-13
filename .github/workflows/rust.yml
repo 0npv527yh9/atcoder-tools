@@ -31,4 +31,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run tests
-        run: cargo test --verbose -- --show-output
+        run: cargo test --verbose -- --show-output --test-threads=1
