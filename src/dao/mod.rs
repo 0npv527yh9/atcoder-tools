@@ -24,7 +24,7 @@ impl Dao {
 
     pub fn fetch_csrf_token(http_handler: &HttpHandler, url: &str) -> Result<String, Error> {
         let html = http_handler.get(url)?;
-        (&Html::parse_document(&html))
+        Html::parse_document(&html)
             .csrf_token()
             .ok_or(Error::CsrfTokenNotFound)
     }
@@ -46,7 +46,7 @@ impl Dao {
             .into_string()
             .map_err(|_| Error::Others("Too Large Response".to_string()))?;
         let html = Html::parse_document(&html);
-        match (&html).title() {
+        match html.title() {
             Some(title) if title == "AtCoder" => Ok(()),
             Some(_) => Err(Error::LoginFailed),
             None => Err(Error::Others("<title> Not Found".to_string())),
