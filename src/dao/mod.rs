@@ -6,7 +6,7 @@ use crate::{
     },
     parser::html_parser::{HtmlParser, TasksHtml},
 };
-use dto::{LoginData, TaskUrl};
+use dto::LoginData;
 use scraper::Html;
 
 pub struct Dao {
@@ -53,13 +53,12 @@ impl Dao {
         }
     }
 
-    pub fn fetch_test_suites(&self, url: TaskUrl) -> Result<Vec<TestSuite>, Error> {
-        let html = self.http_handler.get(&url.url())?;
+    pub fn fetch_test_suites(&self, url: &str) -> Result<Vec<TestSuite>, Error> {
+        let html = self.http_handler.get(url)?;
         Ok(Html::parse_document(&html).test_suites())
     }
 
-    pub fn fetch_task_screen_names(&self, contest_url: &str) -> Result<Vec<String>, Error> {
-        let tasks_url = format!("{contest_url}/tasks");
+    pub fn fetch_task_screen_names(&self, tasks_url: &str) -> Result<Vec<String>, Error> {
         let html = self.http_handler.get(&tasks_url)?;
         let html = Html::parse_document(&html);
         let html = TasksHtml(html);
@@ -97,19 +96,6 @@ pub mod dto {
                 ("password", password),
                 ("csrf_token", csrf_token),
             ]
-        }
-    }
-
-    pub enum TaskUrl {
-        TasksPrint(String),
-        Task(String),
-    }
-
-    impl TaskUrl {
-        pub fn url(self) -> String {
-            match self {
-                TaskUrl::TasksPrint(url) | TaskUrl::Task(url) => url,
-            }
         }
     }
 }
@@ -158,11 +144,11 @@ mod tests {
     fn test_fetch_test_suites_task_page() {
         // Setup
         let http_handler = HttpHandler::new(Agent::new());
-        let url = TaskUrl::Task("https://atcoder.jp/contests/abc388/tasks/abc388_a".to_string());
+        let task_url = "https://atcoder.jp/contests/abc388/tasks/abc388_a";
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(url).unwrap();
+        let test_suites = dao.fetch_test_suites(task_url).unwrap();
 
         // Verify
         println!("{test_suites:#?}");
@@ -175,14 +161,34 @@ mod tests {
     fn test_fetch_test_suites_tasks_print() {
         // Setup
         let http_handler = HttpHandler::new(Agent::new());
-        let url = TaskUrl::TasksPrint("https://atcoder.jp/contests/abc388/tasks_print".to_string());
+        let tasks_print_url = "https://atcoder.jp/contests/abc388/tasks_print";
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(url).unwrap();
+        let test_suites = dao.fetch_test_suites(tasks_print_url).unwrap();
 
         // Verify
         println!("{test_suites:#?}");
         assert_eq!(7, test_suites.len());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_fetch_task_screen_names() {
+        // Setup
+        let http_handler = HttpHandler::new(Agent::new());
+        let tasks_url = "https://atcoder.jp/contests/abc388/tasks";
+        let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
+
+        // Run
+        let task_screen_names = dao.fetch_task_screen_names(tasks_url).unwrap();
+
+        // Verify
+        assert_eq!(
+            vec![
+                "abc388_a", "abc388_b", "abc388_c", "abc388_d", "abc388_e", "abc388_f", "abc388_g"
+            ],
+            task_screen_names
+        );
     }
 }
