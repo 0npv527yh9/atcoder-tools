@@ -11,6 +11,8 @@ pub struct Config {
 #[derive(Serialize, Deserialize)]
 pub struct File {
     pub session_data: String,
+    pub tasks_info: String,
+    pub test: String,
 }
 
 #[derive(Serialize, Deserialize)]
