@@ -23,7 +23,7 @@ pub fn save_test_suites(test_suites: &[TestSuite], test_dir: &str) -> Result<(),
 }
 
 pub fn save_tasks_info(tasks_info: &[TaskInfo], file_path: &str) -> Result<(), Error> {
-    let contents = toml::to_string_pretty(tasks_info)?;
+    let contents = serde_json::to_string_pretty(tasks_info)?;
     fs::write(file_path, &contents)?;
     Ok(())
 }
@@ -34,7 +34,7 @@ pub enum Error {
     IOError(#[from] std::io::Error),
 
     #[error(transparent)]
-    TomlError(#[from] toml::ser::Error),
+    JsonError(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
@@ -69,6 +69,22 @@ mod tests {
 
         // Run
         let result = save_test_suites(&test_suites, "tests/data/test");
+
+        // Verify
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_save_tasks_info() {
+        // Setup
+        let tasks_info = [TaskInfo {
+            task: "some-task".to_string(),
+            contest_url: "contest-url".to_string(),
+            task_screen_name: "some-contest_some-task".to_string(),
+        }];
+
+        // Run
+        let result = save_tasks_info(&tasks_info, "tests/data/tasks_info.json");
 
         // Verify
         assert!(result.is_ok());
