@@ -59,7 +59,7 @@ impl Dao {
     }
 
     pub fn fetch_task_screen_names(&self, tasks_url: &str) -> Result<Vec<String>, Error> {
-        let html = self.http_handler.get(&tasks_url)?;
+        let html = self.http_handler.get(tasks_url)?;
         let html = Html::parse_document(&html);
         let html = TasksHtml(html);
         Ok(html.task_screen_names())
