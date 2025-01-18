@@ -1,4 +1,4 @@
-mod fetch_test_suites;
+mod fetch_test_suite;
 mod login;
 
 use crate::config::Config;
@@ -14,9 +14,9 @@ struct Cli {
 enum Command {
     Login,
 
-    /// Fetch test suites
+    /// Fetch test suite
     #[command(name = "fetch-test", visible_alias = "f")]
-    FetchTestSuites {
+    FetchTestSuite {
         /// URL of a contest page or a task page
         url: String,
     },
@@ -25,6 +25,6 @@ enum Command {
 pub fn run(config: Config) {
     match Cli::parse().command {
         Command::Login => login::login(&config.url.login, &config.file.session_data),
-        Command::FetchTestSuites { url } => fetch_test_suites::fetch(&url, &config),
+        Command::FetchTestSuite { url } => fetch_test_suite::fetch(&url, &config),
     }
 }

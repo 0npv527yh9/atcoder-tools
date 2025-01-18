@@ -53,9 +53,9 @@ impl Dao {
         }
     }
 
-    pub fn fetch_test_suites(&self, url: &str) -> Result<Vec<TestCases>, Error> {
+    pub fn fetch_test_suite(&self, url: &str) -> Result<Vec<TestCases>, Error> {
         let html = self.http_handler.get(url)?;
-        Ok(Html::parse_document(&html).test_suites())
+        Ok(Html::parse_document(&html).test_suite())
     }
 
     pub fn fetch_task_screen_names(&self, tasks_url: &str) -> Result<Vec<String>, Error> {
@@ -141,35 +141,35 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_fetch_test_suites_task_page() {
+    fn test_fetch_test_suite_task_page() {
         // Setup
         let http_handler = HttpHandler::new(Agent::new());
         let task_url = "https://atcoder.jp/contests/abc388/tasks/abc388_a";
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(task_url).unwrap();
+        let test_suite = dao.fetch_test_suite(task_url).unwrap();
 
         // Verify
-        println!("{test_suites:#?}");
-        assert_eq!(1, test_suites.len());
-        assert_eq!(2, test_suites[0].test_cases.len());
+        println!("{test_suite:#?}");
+        assert_eq!(1, test_suite.len());
+        assert_eq!(2, test_suite[0].test_cases.len());
     }
 
     #[test]
     #[ignore]
-    fn test_fetch_test_suites_tasks_print() {
+    fn test_fetch_test_suite_tasks_print() {
         // Setup
         let http_handler = HttpHandler::new(Agent::new());
         let tasks_print_url = "https://atcoder.jp/contests/abc388/tasks_print";
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         // Run
-        let test_suites = dao.fetch_test_suites(tasks_print_url).unwrap();
+        let test_suite = dao.fetch_test_suite(tasks_print_url).unwrap();
 
         // Verify
-        println!("{test_suites:#?}");
-        assert_eq!(7, test_suites.len());
+        println!("{test_suite:#?}");
+        assert_eq!(7, test_suite.len());
     }
 
     #[test]
