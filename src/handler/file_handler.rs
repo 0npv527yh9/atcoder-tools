@@ -1,4 +1,4 @@
-use crate::dto::{TaskInfo, TestCase, TestSuite};
+use crate::dto::{SessionData, TaskInfo, TestCase, TestSuite};
 use std::fs;
 
 pub fn save_test_suites(test_suites: &[TestSuite], test_dir: &str) -> Result<(), Error> {
@@ -26,6 +26,11 @@ pub fn save_tasks_info(tasks_info: &[TaskInfo], file_path: &str) -> Result<(), E
     let contents = serde_json::to_string_pretty(tasks_info)?;
     fs::write(file_path, &contents)?;
     Ok(())
+}
+
+pub fn load_session_data(file_path: &str) -> Result<SessionData, Error> {
+    let session_data = serde_json::from_str(&fs::read_to_string(file_path)?)?;
+    Ok(session_data)
 }
 
 #[derive(thiserror::Error, Debug)]
