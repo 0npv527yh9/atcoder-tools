@@ -1,7 +1,7 @@
-use crate::dto::{SessionData, TaskInfo, TestCase, TestCases};
+use crate::dto::{SessionData, TaskInfo, TestCase, TestCases, TestSuite};
 use std::fs;
 
-pub fn save_test_suite(test_suite: &[TestCases], test_dir: &str) -> Result<(), Error> {
+pub fn save_test_suite(test_suite: &TestSuite, test_dir: &str) -> Result<(), Error> {
     for TestCases { task, test_cases } in test_suite {
         let input_dir = format!("{test_dir}/{task}/in");
         let output_dir = format!("{test_dir}/{task}/out");

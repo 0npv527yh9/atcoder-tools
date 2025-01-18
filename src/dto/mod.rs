@@ -21,6 +21,8 @@ pub struct TestCases {
     pub test_cases: Vec<TestCase>,
 }
 
+pub type TestSuite = Vec<TestCases>;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskInfo {
     pub task: String,

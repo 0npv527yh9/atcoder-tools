@@ -1,4 +1,4 @@
-use crate::dto::{TestCase, TestCases};
+use crate::dto::{TestCase, TestCases, TestSuite};
 use itertools::Itertools;
 use regex::Regex;
 use scraper::{selectable::Selectable, ElementRef, Html, Selector};
@@ -6,7 +6,7 @@ use scraper::{selectable::Selectable, ElementRef, Html, Selector};
 pub trait HtmlParser {
     fn csrf_token(&self) -> Option<String>;
     fn title(&self) -> Option<String>;
-    fn test_suite(&self) -> Vec<TestCases>;
+    fn test_suite(&self) -> TestSuite;
 }
 
 impl HtmlParser for Html {
@@ -20,7 +20,7 @@ impl HtmlParser for Html {
         self.select_one("title").map(|element| element.inner_html())
     }
 
-    fn test_suite(&self) -> Vec<TestCases> {
+    fn test_suite(&self) -> TestSuite {
         parse_task_tags(self)
             .into_iter()
             .filter_map(|task_tag| {
