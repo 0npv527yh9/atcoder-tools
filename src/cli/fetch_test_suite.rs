@@ -4,7 +4,7 @@ use crate::{
     dto::SessionData,
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
-    service::fetch_test_case::FetchTestSuitesService,
+    service::fetch_test_case::FetchTestSuiteService,
 };
 
 pub fn fetch(url: &str, config: &Config) {
@@ -15,11 +15,9 @@ pub fn fetch(url: &str, config: &Config) {
 
     let http_handler = HttpHandler::with_cookies(cookies);
     let dao = Dao::new(http_handler, csrf_token);
-    let fetch_service = FetchTestSuitesService::new(dao);
+    let fetch_service = FetchTestSuiteService::new(dao);
 
-    let tasks = fetch_service
-        .fetch_test_suites(url, config)
-        .unwrap_or_exit();
+    let tasks = fetch_service.fetch_test_suite(url, config).unwrap_or_exit();
 
     println!("Saved: {tasks:?}");
 }

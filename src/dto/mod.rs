@@ -16,10 +16,12 @@ pub struct TestCase {
 }
 
 #[derive(Debug)]
-pub struct TestSuite {
+pub struct TestCases {
     pub task: String,
     pub test_cases: Vec<TestCase>,
 }
+
+pub type TestSuite = Vec<TestCases>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskInfo {

@@ -1,35 +1,35 @@
 use crate::{
     config::Config,
     dao::{self, Dao},
-    dto::{TaskInfo, TestSuite},
+    dto::{TaskInfo, TestCases},
     handler::file_handler,
     parser::url_parser::{self, TaskUrl},
 };
 use itertools::Itertools;
 
-pub struct FetchTestSuitesService {
+pub struct FetchTestSuiteService {
     dao: Dao,
 }
 
-impl FetchTestSuitesService {
+impl FetchTestSuiteService {
     pub fn new(dao: Dao) -> Self {
         Self { dao }
     }
 
-    pub fn fetch_test_suites(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
+    pub fn fetch_test_suite(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
             task_screen_names,
         } = self.fetch_tasks_info(url)?;
 
-        let test_suites = self.dao.fetch_test_suites(&url)?;
-        file_handler::save_test_suites(&test_suites, &config.file.test)?;
+        let test_suite = self.dao.fetch_test_suite(&url)?;
+        file_handler::save_test_suite(&test_suite, &config.file.test)?;
 
         let tasks_info = task_screen_names
             .into_iter()
-            .zip(test_suites)
-            .map(|(task_screen_name, TestSuite { task, .. })| TaskInfo {
+            .zip(test_suite)
+            .map(|(task_screen_name, TestCases { task, .. })| TaskInfo {
                 task,
                 contest_url: contest_url.clone(),
                 task_screen_name,
@@ -104,7 +104,7 @@ mod tests {
         // Setup
         let http_handler = HttpHandler::new(Agent::new());
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
-        let service = FetchTestSuitesService::new(dao);
+        let service = FetchTestSuiteService::new(dao);
 
         let url = "https://atcoder.jp/contests/abc388";
 
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_fetch_test_suites() {
+    fn test_fetch_test_suite() {
         // Setup
         let config = Config {
             file: File {
@@ -134,15 +134,15 @@ mod tests {
 
         let http_handler = HttpHandler::new(Agent::new());
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
-        let service = FetchTestSuitesService::new(dao);
+        let service = FetchTestSuiteService::new(dao);
 
         let url = "https://atcoder.jp/contests/abc388";
 
         // Run
-        let test_suites = service.fetch_test_suites(url, &config).unwrap();
+        let test_suite = service.fetch_test_suite(url, &config).unwrap();
 
         // Verify
-        println!("{:#?}", test_suites);
-        assert_eq!(7, test_suites.len());
+        println!("{:#?}", test_suite);
+        assert_eq!(7, test_suite.len());
     }
 }
