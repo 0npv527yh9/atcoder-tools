@@ -16,7 +16,7 @@ impl FetchTestSuitesService {
         Self { dao }
     }
 
-    pub fn fetch_test_suites(&self, url: &str, config: &Config) -> Result<Vec<TaskInfo>, Error> {
+    pub fn fetch_test_suites(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
@@ -37,7 +37,11 @@ impl FetchTestSuitesService {
             .collect_vec();
         file_handler::save_tasks_info(&tasks_info, &config.file.tasks_info)?;
 
-        Ok(tasks_info)
+        let tasks = tasks_info
+            .into_iter()
+            .map(|task_info| task_info.task)
+            .collect();
+        Ok(tasks)
     }
 
     fn fetch_tasks_info(&self, url: &str) -> Result<TasksInfo, Error> {
