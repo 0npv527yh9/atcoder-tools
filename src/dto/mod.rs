@@ -16,7 +16,7 @@ pub struct TestCase {
 }
 
 #[derive(Debug)]
-pub struct TestSuite {
+pub struct TestCases {
     pub task: String,
     pub test_cases: Vec<TestCase>,
 }

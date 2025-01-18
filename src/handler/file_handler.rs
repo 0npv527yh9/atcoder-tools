@@ -1,8 +1,8 @@
-use crate::dto::{SessionData, TaskInfo, TestCase, TestSuite};
+use crate::dto::{SessionData, TaskInfo, TestCase, TestCases};
 use std::fs;
 
-pub fn save_test_suites(test_suites: &[TestSuite], test_dir: &str) -> Result<(), Error> {
-    for TestSuite { task, test_cases } in test_suites {
+pub fn save_test_suites(test_suites: &[TestCases], test_dir: &str) -> Result<(), Error> {
+    for TestCases { task, test_cases } in test_suites {
         let input_dir = format!("{test_dir}/{task}/in");
         let output_dir = format!("{test_dir}/{task}/out");
 
@@ -50,14 +50,14 @@ mod tests {
     fn test_save_test_suites() {
         // Setup
         let test_suites = vec![
-            TestSuite {
+            TestCases {
                 task: "A".to_string(),
                 test_cases: vec![TestCase {
                     input: "1\n2\n".to_string(),
                     output: "3\n4\n".to_string(),
                 }],
             },
-            TestSuite {
+            TestCases {
                 task: "B".to_string(),
                 test_cases: vec![
                     TestCase {

@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     dao::{self, Dao},
-    dto::{TaskInfo, TestSuite},
+    dto::{TaskInfo, TestCases},
     handler::file_handler,
     parser::url_parser::{self, TaskUrl},
 };
@@ -29,7 +29,7 @@ impl FetchTestSuitesService {
         let tasks_info = task_screen_names
             .into_iter()
             .zip(test_suites)
-            .map(|(task_screen_name, TestSuite { task, .. })| TaskInfo {
+            .map(|(task_screen_name, TestCases { task, .. })| TaskInfo {
                 task,
                 contest_url: contest_url.clone(),
                 task_screen_name,

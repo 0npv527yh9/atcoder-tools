@@ -1,5 +1,5 @@
 use crate::{
-    dto::{SessionData, TestSuite},
+    dto::{SessionData, TestCases},
     handler::{
         http_handler::{self, HttpHandler},
         terminal_handler::Credentials,
@@ -53,7 +53,7 @@ impl Dao {
         }
     }
 
-    pub fn fetch_test_suites(&self, url: &str) -> Result<Vec<TestSuite>, Error> {
+    pub fn fetch_test_suites(&self, url: &str) -> Result<Vec<TestCases>, Error> {
         let html = self.http_handler.get(url)?;
         Ok(Html::parse_document(&html).test_suites())
     }
