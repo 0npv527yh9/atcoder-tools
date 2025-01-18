@@ -12,7 +12,11 @@ pub struct FetchTestSuitesService {
 }
 
 impl FetchTestSuitesService {
-    pub fn fetch_test_suites(&self, url: String, config: Config) -> Result<(), Error> {
+    pub fn new(dao: Dao) -> Self {
+        Self { dao }
+    }
+
+    pub fn fetch_test_suites(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
@@ -33,10 +37,14 @@ impl FetchTestSuitesService {
             .collect_vec();
         file_handler::save_tasks_info(&tasks_info, &config.file.tasks_info)?;
 
-        Ok(())
+        let tasks = tasks_info
+            .into_iter()
+            .map(|task_info| task_info.task)
+            .collect();
+        Ok(tasks)
     }
 
-    fn fetch_tasks_info(&self, url: String) -> Result<TasksInfo, Error> {
+    fn fetch_tasks_info(&self, url: &str) -> Result<TasksInfo, Error> {
         let tasks_info = match url.parse()? {
             TaskUrl::TasksPrint { url, contest_url } => {
                 let tasks_url = format!("{contest_url}/tasks");
@@ -62,6 +70,7 @@ impl FetchTestSuitesService {
     }
 }
 
+#[derive(Debug)]
 struct TasksInfo {
     url: String,
     contest_url: String,
@@ -78,4 +87,62 @@ pub enum Error {
 
     #[error(transparent)]
     InvalidUrl(#[from] url_parser::Error),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        config::{File, Url},
+        handler::http_handler::HttpHandler,
+    };
+    use ureq::Agent;
+
+    #[test]
+    #[ignore]
+    fn test_fetch_tasks_info() {
+        // Setup
+        let http_handler = HttpHandler::new(Agent::new());
+        let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
+        let service = FetchTestSuitesService::new(dao);
+
+        let url = "https://atcoder.jp/contests/abc388";
+
+        // Run
+        let tasks_info = service.fetch_tasks_info(url).unwrap();
+
+        // Verify
+        println!("{:#?}", tasks_info);
+        assert_eq!(7, tasks_info.task_screen_names.len());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_fetch_test_suites() {
+        // Setup
+        let config = Config {
+            file: File {
+                session_data: "".to_string(),
+                tasks_info: "tests/data/tasks_info.toml".to_string(),
+                test: "tests/data/test".to_string(),
+            },
+            url: Url {
+                homepage: "".to_string(),
+                login: "".to_string(),
+            },
+        };
+
+        let http_handler = HttpHandler::new(Agent::new());
+        let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
+        let service = FetchTestSuitesService::new(dao);
+
+        let url = "https://atcoder.jp/contests/abc388";
+
+        // Run
+        let test_suites = service.fetch_test_suites(url, &config).unwrap();
+
+        // Verify
+        println!("{:#?}", test_suites);
+        assert_eq!(7, test_suites.len());
+    }
 }

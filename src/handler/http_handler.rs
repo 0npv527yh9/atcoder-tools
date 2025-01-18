@@ -11,7 +11,7 @@ impl HttpHandler {
         Self { agent }
     }
 
-    fn with_cookies(cookies: Vec<Cookie<'static>>) -> Self {
+    pub fn with_cookies(cookies: Vec<Cookie<'static>>) -> Self {
         let cookie_store = cookies.into_cookie_store();
         let agent = ureq::builder().cookie_store(cookie_store).build();
         Self { agent }
