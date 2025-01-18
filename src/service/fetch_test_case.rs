@@ -16,12 +16,16 @@ impl FetchTestSuiteService {
         Self { dao }
     }
 
-    pub fn fetch_test_suite(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
+    pub fn fetch_test_suite(
+        &self,
+        task_url: TaskUrl,
+        config: &Config,
+    ) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
             task_screen_names,
-        } = self.fetch_tasks_info(url)?;
+        } = self.fetch_tasks_info(task_url)?;
 
         let test_suite = self.dao.fetch_test_suite(&url)?;
         file_handler::save_test_suite(&test_suite, &config.file.test)?;
@@ -44,8 +48,8 @@ impl FetchTestSuiteService {
         Ok(tasks)
     }
 
-    fn fetch_tasks_info(&self, url: &str) -> Result<TasksInfo, Error> {
-        let tasks_info = match url.parse()? {
+    fn fetch_tasks_info(&self, task_url: TaskUrl) -> Result<TasksInfo, Error> {
+        let tasks_info = match task_url {
             TaskUrl::TasksPrint { url, contest_url } => {
                 let tasks_url = format!("{contest_url}/tasks");
                 let task_screen_names = self.dao.fetch_task_screen_names(&tasks_url)?;
@@ -106,10 +110,10 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
         let service = FetchTestSuiteService::new(dao);
 
-        let url = "https://atcoder.jp/contests/abc388";
+        let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();
 
         // Run
-        let tasks_info = service.fetch_tasks_info(url).unwrap();
+        let tasks_info = service.fetch_tasks_info(task_url).unwrap();
 
         // Verify
         println!("{:#?}", tasks_info);
@@ -136,10 +140,10 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
         let service = FetchTestSuiteService::new(dao);
 
-        let url = "https://atcoder.jp/contests/abc388";
+        let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();
 
         // Run
-        let test_suite = service.fetch_test_suite(url, &config).unwrap();
+        let test_suite = service.fetch_test_suite(task_url, &config).unwrap();
 
         // Verify
         println!("{:#?}", test_suite);

@@ -17,7 +17,8 @@ pub fn fetch(url: &str, config: &Config) {
     let dao = Dao::new(http_handler, csrf_token);
     let fetch_service = FetchTestSuiteService::new(dao);
 
-    let tasks = fetch_service.fetch_test_suite(url, config).unwrap_or_exit();
+    let task_url = url.parse().unwrap_or_exit();
+    let tasks = fetch_service.fetch_test_suite(task_url, config).unwrap_or_exit();
 
     println!("Saved: {tasks:?}");
 }
