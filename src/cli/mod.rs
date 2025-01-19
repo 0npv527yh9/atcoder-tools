@@ -1,7 +1,7 @@
 mod fetch_test_suite;
 mod login;
 
-use crate::{config::Config, domain::url::Url};
+use crate::{config::Config, domain::url::FetchTaskUrl};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -23,7 +23,7 @@ enum Command {
         /// - Contest Page URL: https://atcoder.jp/contests/<contest>
         /// - Task Page URL: https://atcoder.jp/contests/<contest>/task/<task>
         #[arg(verbatim_doc_comment)]
-        url: Url,
+        url: FetchTaskUrl,
     },
 }
 

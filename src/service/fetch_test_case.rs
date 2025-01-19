@@ -1,7 +1,10 @@
 use crate::{
     config::Config,
     dao::{self, Dao},
-    domain::url::{self, Url},
+    domain::{
+        page_type,
+        url::{self, FetchTaskUrl, Url},
+    },
     dto::{TaskInfo, TestCases},
     handler::file_handler,
 };
@@ -16,7 +19,11 @@ impl FetchTestSuiteService {
         Self { dao }
     }
 
-    pub fn fetch_test_suite(&self, config: &Config, task_url: Url) -> Result<Vec<String>, Error> {
+    pub fn fetch_test_suite(
+        &self,
+        config: &Config,
+        task_url: FetchTaskUrl,
+    ) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
@@ -44,9 +51,9 @@ impl FetchTestSuiteService {
         Ok(tasks)
     }
 
-    fn fetch_tasks_info(&self, task_url: Url) -> Result<TasksInfo, Error> {
+    fn fetch_tasks_info(&self, task_url: FetchTaskUrl) -> Result<TasksInfo, Error> {
         let tasks_info = match task_url {
-            Url::Contest {
+            FetchTaskUrl::Contest {
                 contest_url,
                 tasks_print_url,
                 tasks_url,
@@ -58,7 +65,7 @@ impl FetchTestSuiteService {
                     task_screen_names,
                 }
             }
-            Url::Task {
+            FetchTaskUrl::Task {
                 task_url,
                 contest_url,
                 task_screen_name,
@@ -75,8 +82,8 @@ impl FetchTestSuiteService {
 
 #[derive(Debug)]
 struct TasksInfo {
-    url: String,
-    contest_url: String,
+    url: Url<page_type::Task>,
+    contest_url: Url<page_type::ContestHome>,
     task_screen_names: Vec<String>,
 }
 
@@ -130,8 +137,8 @@ mod tests {
                 test: "tests/data/test".to_string(),
             },
             url: Url {
-                homepage: "".to_string(),
-                login: "".to_string(),
+                homepage: "".to_string().into(),
+                login: "".to_string().into(),
             },
         };
 

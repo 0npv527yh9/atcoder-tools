@@ -1,27 +1,42 @@
+use super::page_type::{self, Tasks};
 use crate::dto::{TestCase, TestCases, TestSuite};
 use itertools::Itertools;
 use regex::Regex;
-use scraper::{selectable::Selectable, ElementRef, Html, Selector};
+use scraper::{selectable::Selectable, ElementRef, Selector};
+use std::{marker::PhantomData, ops::Deref};
 
-pub trait HtmlParser {
-    fn csrf_token(&self) -> Option<String>;
-    fn title(&self) -> Option<String>;
-    fn test_suite(&self) -> TestSuite;
+pub struct Html<PageType>(scraper::Html, PhantomData<fn() -> PageType>);
+
+impl<PageType> From<String> for Html<PageType> {
+    fn from(html: String) -> Self {
+        let html = scraper::Html::parse_document(&html);
+        Self(html, PhantomData)
+    }
 }
 
-impl HtmlParser for Html {
-    fn csrf_token(&self) -> Option<String> {
+impl<PageType> Deref for Html<PageType> {
+    type Target = scraper::Html;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Html<page_type::Home> {
+    pub fn csrf_token(&self) -> Option<String> {
         self.select_one("[name=csrf_token]")
             .and_then(|element| element.attr("value"))
             .map(Into::into)
     }
 
-    fn title(&self) -> Option<String> {
+    pub fn title(&self) -> Option<String> {
         self.select_one("title").map(|element| element.inner_html())
     }
+}
 
-    fn test_suite(&self) -> TestSuite {
-        parse_task_tags(self)
+impl Html<page_type::Task> {
+    pub fn test_suite(&self) -> TestSuite {
+        self.parse_task_tags()
             .into_iter()
             .filter_map(|task_tag| {
                 Some(TestCases {
@@ -31,18 +46,19 @@ impl HtmlParser for Html {
             })
             .collect()
     }
-}
 
-fn parse_task_tags(html: &Html) -> Vec<TaskTag<'_>> {
+    fn parse_task_tags(&self) -> Vec<TaskTag<'_>> {
+        self.0
+            .select_all("span.h2")
+            .into_iter()
+            .map(TitleTag)
+            .filter_map(Self::title_to_task)
+            .collect()
+    }
+
     fn title_to_task(title_tag: TitleTag<'_>) -> Option<TaskTag<'_>> {
         Some(TaskTag(ElementRef::wrap(title_tag.0.parent()?)?))
     }
-
-    html.select_all("span.h2")
-        .into_iter()
-        .map(TitleTag)
-        .filter_map(title_to_task)
-        .collect()
 }
 
 #[derive(Debug)]
@@ -98,13 +114,11 @@ impl TestCaseTag<'_> {
     }
 }
 
-pub struct TasksHtml(pub Html);
-
-impl TasksHtml {
+impl Html<Tasks> {
     pub fn task_screen_names(&self) -> Vec<String> {
         let pattern = Regex::new(r"^/contests/[^/]+/tasks/([^/]+)$").unwrap();
 
-        let submit_url_tags = self.0.select_all("table > tbody > tr > td:first-child > a");
+        let submit_url_tags = self.select_all("table > tbody > tr > td:first-child > a");
 
         let submit_urls = submit_url_tags
             .into_iter()
@@ -142,7 +156,6 @@ where
 mod tests {
     use super::*;
     use crate::utils;
-    use scraper::Html;
 
     #[test]
     #[ignore]
@@ -153,9 +166,7 @@ mod tests {
         let expected = rpassword::prompt_password("CSRF Token").unwrap();
 
         // Run
-        let actual = Html::parse_document(&html)
-            .csrf_token()
-            .expect("CSRF Token Not Found");
+        let actual = html.csrf_token().expect("CSRF Token Not Found");
 
         // Verify
         assert_eq!(expected, actual);
@@ -168,9 +179,7 @@ mod tests {
         let expected = "AtCoder";
 
         // Run
-        let actual = Html::parse_document(&html)
-            .title()
-            .expect("ERROR: <title> Not Found");
+        let actual = html.title().expect("ERROR: <title> Not Found");
 
         // Verify
         assert_eq!(expected, actual);
@@ -180,10 +189,9 @@ mod tests {
     fn test_parse_task_tags() {
         // Setup
         let html = utils::test::load_task_print_html();
-        let html = Html::parse_document(&html);
 
         // Run
-        let task_tags = parse_task_tags(&html);
+        let task_tags = html.parse_task_tags();
 
         // Verify
         println!("{:?}", task_tags);
@@ -194,8 +202,7 @@ mod tests {
     fn test_parse_title() {
         // Setup
         let html = utils::test::load_task_print_html();
-        let html = Html::parse_document(&html);
-        let task_tags = parse_task_tags(&html);
+        let task_tags = html.parse_task_tags();
 
         // Run
         let titles = task_tags
@@ -211,8 +218,7 @@ mod tests {
     fn test_test_case_tags() {
         // Setup
         let html = utils::test::load_task_print_html();
-        let html = Html::parse_document(&html);
-        let task_tag = &parse_task_tags(&html)[0];
+        let task_tag = &html.parse_task_tags()[0];
 
         // Run
         let test_case_tags = task_tag.test_case_tags();
@@ -226,7 +232,6 @@ mod tests {
     fn test_parse_test_suite() {
         // Setup
         let html = utils::test::load_task_print_html();
-        let html = Html::parse_document(&html);
 
         // Run
         let test_cases = html.test_suite();
@@ -240,8 +245,6 @@ mod tests {
     fn test_task_screen_names() {
         // Setup
         let html = utils::test::load_tasks_html();
-        let html = Html::parse_document(&html);
-        let html = TasksHtml(html);
 
         // Run
         let task_screen_names = html.task_screen_names();

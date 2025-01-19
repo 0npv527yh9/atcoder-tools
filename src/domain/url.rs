@@ -1,21 +1,41 @@
+use super::page_type;
 use regex::Regex;
-use std::str::FromStr;
+use serde::{Deserialize, Serialize};
+use std::{marker::PhantomData, ops::Deref, str::FromStr};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct Url<PageType>(String, PhantomData<fn() -> PageType>);
+
+impl<PageType> From<String> for Url<PageType> {
+    fn from(url: String) -> Self {
+        Self(url, PhantomData)
+    }
+}
+
+impl<PageType> Deref for Url<PageType> {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone)]
-pub enum Url {
+pub enum FetchTaskUrl {
     Contest {
-        contest_url: String,
-        tasks_print_url: String,
-        tasks_url: String,
+        contest_url: Url<page_type::ContestHome>,
+        tasks_print_url: Url<page_type::Task>,
+        tasks_url: Url<page_type::Tasks>,
     },
     Task {
-        task_url: String,
-        contest_url: String,
+        task_url: Url<page_type::Task>,
+        contest_url: Url<page_type::ContestHome>,
         task_screen_name: String,
     },
 }
 
-impl FromStr for Url {
+impl FromStr for FetchTaskUrl {
     type Err = Error;
 
     fn from_str(url: &str) -> Result<Self, Self::Err> {
@@ -25,15 +45,15 @@ impl FromStr for Url {
 
         if contest_homepage_pattern.is_match(url) {
             let contest_url = url.to_string();
-            Ok(Url::Contest {
-                tasks_print_url: format!("{contest_url}/tasks_print"),
-                tasks_url: format!("{contest_url}/tasks"),
-                contest_url,
+            Ok(FetchTaskUrl::Contest {
+                tasks_print_url: format!("{contest_url}/tasks_print").into(),
+                tasks_url: format!("{contest_url}/tasks").into(),
+                contest_url: contest_url.into(),
             })
         } else if let Some(captures) = task_page_pattern.captures(url) {
-            Ok(Url::Task {
-                task_url: url.to_string(),
-                contest_url: captures[1].to_string(),
+            Ok(FetchTaskUrl::Task {
+                task_url: url.to_string().into(),
+                contest_url: captures[1].to_string().into(),
                 task_screen_name: captures[2].to_string(),
             })
         } else {
@@ -58,21 +78,21 @@ mod tests {
         let contest_homepage_url = "https://atcoder.jp/contests/abc388";
 
         // Run
-        let task_url: Result<Url, Error> = contest_homepage_url.parse();
+        let task_url: Result<FetchTaskUrl, Error> = contest_homepage_url.parse();
 
         // Verify
-        if let Ok(Url::Contest {
+        if let Ok(FetchTaskUrl::Contest {
             contest_url,
             tasks_print_url,
             tasks_url,
         }) = task_url
         {
-            assert_eq!("https://atcoder.jp/contests/abc388", contest_url);
+            assert_eq!("https://atcoder.jp/contests/abc388", *contest_url);
             assert_eq!(
                 "https://atcoder.jp/contests/abc388/tasks_print",
-                tasks_print_url
+                *tasks_print_url
             );
-            assert_eq!("https://atcoder.jp/contests/abc388/tasks", tasks_url);
+            assert_eq!("https://atcoder.jp/contests/abc388/tasks", *tasks_url);
         } else {
             unreachable!()
         }
@@ -84,17 +104,17 @@ mod tests {
         let task_url = "https://atcoder.jp/contests/abc388/tasks/abc388_a";
 
         // Run
-        let task_url: Result<Url, Error> = task_url.parse();
+        let task_url: Result<FetchTaskUrl, Error> = task_url.parse();
 
         // Verify
-        if let Ok(Url::Task {
+        if let Ok(FetchTaskUrl::Task {
             task_url: url,
             contest_url,
             task_screen_name,
         }) = task_url
         {
-            assert_eq!("https://atcoder.jp/contests/abc388/tasks/abc388_a", url);
-            assert_eq!("https://atcoder.jp/contests/abc388", contest_url);
+            assert_eq!("https://atcoder.jp/contests/abc388/tasks/abc388_a", *url);
+            assert_eq!("https://atcoder.jp/contests/abc388", *contest_url);
             assert_eq!("abc388_a", task_screen_name)
         } else {
             unreachable!()
@@ -107,7 +127,7 @@ mod tests {
         let url = "invalid-url";
 
         // Run
-        let task_url: Result<Url, Error> = url.parse();
+        let task_url: Result<FetchTaskUrl, Error> = url.parse();
 
         // Verify
         if let Err(error) = task_url {
