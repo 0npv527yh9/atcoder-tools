@@ -2,19 +2,20 @@ use regex::Regex;
 use std::str::FromStr;
 
 #[derive(Clone)]
-pub enum TaskUrl {
-    TasksPrint {
-        url: String,
+pub enum Url {
+    Contest {
         contest_url: String,
+        tasks_print_url: String,
+        tasks_url: String,
     },
     Task {
-        url: String,
+        task_url: String,
         contest_url: String,
         task_screen_name: String,
     },
 }
 
-impl FromStr for TaskUrl {
+impl FromStr for Url {
     type Err = Error;
 
     fn from_str(url: &str) -> Result<Self, Self::Err> {
@@ -24,13 +25,14 @@ impl FromStr for TaskUrl {
 
         if contest_homepage_pattern.is_match(url) {
             let contest_url = url.to_string();
-            Ok(TaskUrl::TasksPrint {
-                url: format!("{contest_url}/tasks_print"),
+            Ok(Url::Contest {
+                tasks_print_url: format!("{contest_url}/tasks_print"),
+                tasks_url: format!("{contest_url}/tasks"),
                 contest_url,
             })
         } else if let Some(captures) = task_page_pattern.captures(url) {
-            Ok(TaskUrl::Task {
-                url: url.to_string(),
+            Ok(Url::Task {
+                task_url: url.to_string(),
                 contest_url: captures[1].to_string(),
                 task_screen_name: captures[2].to_string(),
             })
@@ -56,12 +58,21 @@ mod tests {
         let contest_homepage_url = "https://atcoder.jp/contests/abc388";
 
         // Run
-        let task_url: Result<TaskUrl, Error> = contest_homepage_url.parse();
+        let task_url: Result<Url, Error> = contest_homepage_url.parse();
 
         // Verify
-        if let Ok(TaskUrl::TasksPrint { url, contest_url }) = task_url {
-            assert_eq!("https://atcoder.jp/contests/abc388/tasks_print", url);
+        if let Ok(Url::Contest {
+            contest_url,
+            tasks_print_url,
+            tasks_url,
+        }) = task_url
+        {
             assert_eq!("https://atcoder.jp/contests/abc388", contest_url);
+            assert_eq!(
+                "https://atcoder.jp/contests/abc388/tasks_print",
+                tasks_print_url
+            );
+            assert_eq!("https://atcoder.jp/contests/abc388/tasks", tasks_url);
         } else {
             unreachable!()
         }
@@ -73,11 +84,11 @@ mod tests {
         let task_url = "https://atcoder.jp/contests/abc388/tasks/abc388_a";
 
         // Run
-        let task_url: Result<TaskUrl, Error> = task_url.parse();
+        let task_url: Result<Url, Error> = task_url.parse();
 
         // Verify
-        if let Ok(TaskUrl::Task {
-            url,
+        if let Ok(Url::Task {
+            task_url: url,
             contest_url,
             task_screen_name,
         }) = task_url
@@ -96,7 +107,7 @@ mod tests {
         let url = "invalid-url";
 
         // Run
-        let task_url: Result<TaskUrl, Error> = url.parse();
+        let task_url: Result<Url, Error> = url.parse();
 
         // Verify
         if let Err(error) = task_url {

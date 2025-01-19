@@ -3,7 +3,7 @@ use crate::{
     dao::{self, Dao},
     dto::{TaskInfo, TestCases},
     handler::file_handler,
-    parser::url_parser::{self, TaskUrl},
+    parser::url_parser::{self, Url},
 };
 use itertools::Itertools;
 
@@ -16,11 +16,7 @@ impl FetchTestSuiteService {
         Self { dao }
     }
 
-    pub fn fetch_test_suite(
-        &self,
-        config: &Config,
-        task_url: TaskUrl,
-    ) -> Result<Vec<String>, Error> {
+    pub fn fetch_test_suite(&self, config: &Config, task_url: Url) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
@@ -48,23 +44,26 @@ impl FetchTestSuiteService {
         Ok(tasks)
     }
 
-    fn fetch_tasks_info(&self, task_url: TaskUrl) -> Result<TasksInfo, Error> {
+    fn fetch_tasks_info(&self, task_url: Url) -> Result<TasksInfo, Error> {
         let tasks_info = match task_url {
-            TaskUrl::TasksPrint { url, contest_url } => {
-                let tasks_url = format!("{contest_url}/tasks");
+            Url::Contest {
+                contest_url,
+                tasks_print_url,
+                tasks_url,
+            } => {
                 let task_screen_names = self.dao.fetch_task_screen_names(&tasks_url)?;
                 TasksInfo {
-                    url,
+                    url: tasks_print_url,
                     contest_url,
                     task_screen_names,
                 }
             }
-            TaskUrl::Task {
-                url,
+            Url::Task {
+                task_url,
                 contest_url,
                 task_screen_name,
             } => TasksInfo {
-                url,
+                url: task_url,
                 contest_url,
                 task_screen_names: vec![task_screen_name],
             },

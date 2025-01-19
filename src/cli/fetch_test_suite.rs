@@ -4,11 +4,11 @@ use crate::{
     dto::SessionData,
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
-    parser::url_parser::TaskUrl,
+    parser::url_parser::Url,
     service::fetch_test_case::FetchTestSuiteService,
 };
 
-pub fn fetch(config: &Config, task_url: TaskUrl) {
+pub fn fetch(config: &Config, task_url: Url) {
     let SessionData {
         cookies,
         csrf_token,
