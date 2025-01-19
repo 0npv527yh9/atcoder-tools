@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::str::FromStr;
 
+#[derive(Clone)]
 pub enum TaskUrl {
     TasksPrint {
         url: String,

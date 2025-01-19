@@ -18,8 +18,8 @@ impl FetchTestSuiteService {
 
     pub fn fetch_test_suite(
         &self,
-        task_url: TaskUrl,
         config: &Config,
+        task_url: TaskUrl,
     ) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
@@ -143,7 +143,7 @@ mod tests {
         let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();
 
         // Run
-        let test_suite = service.fetch_test_suite(task_url, &config).unwrap();
+        let test_suite = service.fetch_test_suite(&config, task_url).unwrap();
 
         // Verify
         println!("{:#?}", test_suite);
