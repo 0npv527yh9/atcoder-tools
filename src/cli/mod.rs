@@ -1,7 +1,7 @@
 mod fetch_test_suite;
 mod login;
 
-use crate::{config::Config, parser::url_parser::Url};
+use crate::{config::Config, domain::url::Url};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

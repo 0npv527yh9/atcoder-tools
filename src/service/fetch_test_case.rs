@@ -1,9 +1,9 @@
 use crate::{
     config::Config,
     dao::{self, Dao},
+    domain::url::{self, Url},
     dto::{TaskInfo, TestCases},
     handler::file_handler,
-    parser::url_parser::{self, Url},
 };
 use itertools::Itertools;
 
@@ -89,7 +89,7 @@ pub enum Error {
     FileHandler(#[from] file_handler::Error),
 
     #[error(transparent)]
-    InvalidUrl(#[from] url_parser::Error),
+    InvalidUrl(#[from] url::Error),
 }
 
 #[cfg(test)]

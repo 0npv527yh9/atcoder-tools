@@ -1,10 +1,10 @@
 use crate::{
     config::Config,
     dao::Dao,
+    domain::url::Url,
     dto::SessionData,
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
-    parser::url_parser::Url,
     service::fetch_test_case::FetchTestSuiteService,
 };
 

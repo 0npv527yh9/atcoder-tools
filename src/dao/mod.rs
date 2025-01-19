@@ -1,10 +1,10 @@
 use crate::{
+    domain::html::{HtmlParser, TasksHtml},
     dto::{SessionData, TestSuite},
     handler::{
         http_handler::{self, HttpHandler},
         terminal_handler::Credentials,
     },
-    parser::html_parser::{HtmlParser, TasksHtml},
 };
 use dto::LoginData;
 use scraper::Html;
