@@ -1,6 +1,9 @@
-use crate::dto::cookie::IntoCookieStore;
+use crate::{
+    domain::{html::Html, url::Url},
+    dto::cookie::IntoCookieStore,
+};
 use cookie_store::Cookie;
-use ureq::{Agent, Response};
+use ureq::Agent;
 
 pub struct HttpHandler {
     agent: Agent,
@@ -17,18 +20,20 @@ impl HttpHandler {
         Self { agent }
     }
 
-    pub fn get(&self, url: &str) -> Result<String, Error> {
+    pub fn get<PageType>(&self, url: &Url<PageType>) -> Result<Html<PageType>, Error> {
         let response = self.agent.get(url).call()?;
         let html = response.into_string()?.replace("\r", "");
-        Ok(html)
+        Ok(html.into())
     }
 
-    pub fn post<'a>(
+    pub fn post<'a, RequestPageType, ResponsePageType>(
         &self,
-        url: &str,
+        url: &Url<RequestPageType>,
         data: impl Into<Vec<(&'static str, &'a str)>>,
-    ) -> Result<Response, Error> {
-        Ok(self.agent.post(url).send_form(&data.into())?)
+    ) -> Result<Html<ResponsePageType>, Error> {
+        let response = self.agent.post(url).send_form(&data.into())?;
+        let html = response.into_string()?.replace("\r", "").into();
+        Ok(html)
     }
 
     pub fn into_cookies(self) -> Vec<Cookie<'static>> {
@@ -58,13 +63,13 @@ impl From<ureq::Error> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
+    use crate::{domain::page_type, utils};
 
     #[test]
     #[ignore]
     fn test_get() {
         // Setup
-        let expected = utils::test::load_homepage_html();
+        let expected = utils::test::load_homepage_html().html();
         let expected = expected.split('\n').collect::<Vec<_>>();
 
         let http_handler = HttpHandler {
@@ -72,9 +77,8 @@ mod tests {
         };
 
         // Run
-        let url = "https://atcoder.jp/home";
-        let actual = http_handler.get(url).unwrap();
-        let actual = actual.replace("\r", "");
+        let url: Url<page_type::Home> = "https://atcoder.jp/home".to_string().into();
+        let actual = http_handler.get(&url).unwrap().html();
         let actual = actual.split('\n').collect::<Vec<_>>();
 
         // Verify

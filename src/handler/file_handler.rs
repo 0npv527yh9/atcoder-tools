@@ -84,7 +84,7 @@ mod tests {
         // Setup
         let tasks_info = [TaskInfo {
             task: "some-task".to_string(),
-            contest_url: "contest-url".to_string(),
+            contest_url: "contest-url".to_string().into(),
             task_screen_name: "some-contest_some-task".to_string(),
         }];
 

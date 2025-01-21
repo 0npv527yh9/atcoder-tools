@@ -1,5 +1,6 @@
 use crate::{
     dao::{self, Dao},
+    domain::{page_type, url::Url},
     handler::terminal_handler,
 };
 use std::fs;
@@ -13,7 +14,7 @@ impl LoginService {
         Self { dao }
     }
 
-    pub fn login(&self, url: &str) -> Result<(), Error> {
+    pub fn login(&self, url: &Url<page_type::Login>) -> Result<(), Error> {
         let credentials = terminal_handler::read_credentials().map_err(Error::Terminal)?;
 
         self.dao.login(credentials, url).or_else(|error| {

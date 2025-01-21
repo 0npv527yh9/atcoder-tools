@@ -1,4 +1,7 @@
-use crate::error::ExpectOrExit;
+use crate::{
+    domain::{page_type, url},
+    error::ExpectOrExit,
+};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -17,8 +20,8 @@ pub struct File {
 
 #[derive(Serialize, Deserialize)]
 pub struct Url {
-    pub homepage: String,
-    pub login: String,
+    pub homepage: url::Url<page_type::Home>,
+    pub login: url::Url<page_type::Login>,
 }
 
 pub fn load_config(file_path: &str) -> Config {

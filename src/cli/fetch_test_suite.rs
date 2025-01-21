@@ -1,14 +1,14 @@
 use crate::{
     config::Config,
     dao::Dao,
-    domain::url::Url,
+    domain::url::FetchTaskUrl,
     dto::SessionData,
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
     service::fetch_test_case::FetchTestSuiteService,
 };
 
-pub fn fetch(config: &Config, task_url: Url) {
+pub fn fetch(config: &Config, task_url: FetchTaskUrl) {
     let SessionData {
         cookies,
         csrf_token,

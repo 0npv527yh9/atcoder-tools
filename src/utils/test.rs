@@ -1,4 +1,7 @@
-use crate::dto::SessionData;
+use crate::{
+    domain::{html::Html, page_type},
+    dto::SessionData,
+};
 use std::{fs, path::Path};
 use ureq::Agent;
 
@@ -11,39 +14,40 @@ pub enum Error {
     InvalidSessionData(String),
 }
 
-pub fn load_homepage_html() -> String {
+pub fn load_homepage_html() -> Html<page_type::Home> {
     let file = "tests/data/homepage.html";
     let url = "https://atcoder.jp/home";
-    load_html(file, url)
+    load_html::<page_type::Home>(file, url)
 }
 
-pub fn load_contest_page_html() -> String {
+pub fn load_contest_page_html() -> Html<page_type::ContestHome> {
     let file = "tests/data/contest_page.html";
     let url = "https://atcoder.jp/contests/abc386";
-    load_html(file, url)
+    load_html::<page_type::ContestHome>(file, url)
 }
 
-pub fn load_tasks_html() -> String {
+pub fn load_tasks_html() -> Html<page_type::Tasks> {
     let file = "tests/data/tasks.html";
     let url = "https://atcoder.jp/contests/abc386/tasks";
-    load_html(file, url)
+    load_html::<page_type::Tasks>(file, url)
 }
 
-pub fn load_task_print_html() -> String {
+pub fn load_task_print_html() -> Html<page_type::Task> {
     let file = "tests/data/task_print.html";
     let url = "https://atcoder.jp/contests/abc386/tasks_print";
-    load_html(file, url)
+    load_html::<page_type::Task>(file, url)
 }
 
-pub fn load_task_page_html() -> String {
+pub fn load_task_page_html() -> Html<page_type::Task> {
     let file = "tests/data/task_page.html";
     let url = "https://atcoder.jp/contests/abc386/tasks/abc386_a";
-    load_html(file, url)
+    load_html::<page_type::Task>(file, url)
 }
 
-fn load_html(file: &str, url: &str) -> String {
+fn load_html<PageType>(file: &str, url: &str) -> Html<PageType> {
     fs::read_to_string(file)
         .or_else(|_| fetch_html(url).and_then(|html| save(file, html)))
+        .map(Into::into)
         .expect("Error: Fail to load or fetch HTML file")
 }
 

@@ -1,5 +1,6 @@
 pub mod cookie;
 
+use crate::domain::{page_type, url::Url};
 use cookie_store::Cookie;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +27,6 @@ pub type TestSuite = Vec<TestCases>;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskInfo {
     pub task: String,
-    pub contest_url: String,
+    pub contest_url: Url<page_type::ContestHome>,
     pub task_screen_name: String,
 }

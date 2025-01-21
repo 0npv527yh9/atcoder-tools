@@ -6,7 +6,7 @@ use ureq::Agent;
 
 pub fn login(config: &Config) {
     let http_handler = HttpHandler::new(Agent::new());
-    let csrf_token = Dao::fetch_csrf_token(&http_handler, &config.url.login).unwrap_or_exit();
+    let csrf_token = Dao::fetch_csrf_token(&http_handler, &config.url.homepage).unwrap_or_exit();
     let dao = Dao::new(http_handler, csrf_token);
     let login_service = LoginService::new(dao);
 
