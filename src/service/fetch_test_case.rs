@@ -1,9 +1,9 @@
 use crate::{
     config::Config,
     dao::{self, Dao},
+    domain::url::{self, Url},
     dto::{TaskInfo, TestCases},
     handler::file_handler,
-    parser::url_parser::{self, TaskUrl},
 };
 use itertools::Itertools;
 
@@ -16,12 +16,12 @@ impl FetchTestSuiteService {
         Self { dao }
     }
 
-    pub fn fetch_test_suite(&self, url: &str, config: &Config) -> Result<Vec<String>, Error> {
+    pub fn fetch_test_suite(&self, config: &Config, task_url: Url) -> Result<Vec<String>, Error> {
         let TasksInfo {
             url,
             contest_url,
             task_screen_names,
-        } = self.fetch_tasks_info(url)?;
+        } = self.fetch_tasks_info(task_url)?;
 
         let test_suite = self.dao.fetch_test_suite(&url)?;
         file_handler::save_test_suite(&test_suite, &config.file.test)?;
@@ -44,23 +44,26 @@ impl FetchTestSuiteService {
         Ok(tasks)
     }
 
-    fn fetch_tasks_info(&self, url: &str) -> Result<TasksInfo, Error> {
-        let tasks_info = match url.parse()? {
-            TaskUrl::TasksPrint { url, contest_url } => {
-                let tasks_url = format!("{contest_url}/tasks");
+    fn fetch_tasks_info(&self, task_url: Url) -> Result<TasksInfo, Error> {
+        let tasks_info = match task_url {
+            Url::Contest {
+                contest_url,
+                tasks_print_url,
+                tasks_url,
+            } => {
                 let task_screen_names = self.dao.fetch_task_screen_names(&tasks_url)?;
                 TasksInfo {
-                    url,
+                    url: tasks_print_url,
                     contest_url,
                     task_screen_names,
                 }
             }
-            TaskUrl::Task {
-                url,
+            Url::Task {
+                task_url,
                 contest_url,
                 task_screen_name,
             } => TasksInfo {
-                url,
+                url: task_url,
                 contest_url,
                 task_screen_names: vec![task_screen_name],
             },
@@ -86,7 +89,7 @@ pub enum Error {
     FileHandler(#[from] file_handler::Error),
 
     #[error(transparent)]
-    InvalidUrl(#[from] url_parser::Error),
+    InvalidUrl(#[from] url::Error),
 }
 
 #[cfg(test)]
@@ -106,10 +109,10 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
         let service = FetchTestSuiteService::new(dao);
 
-        let url = "https://atcoder.jp/contests/abc388";
+        let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();
 
         // Run
-        let tasks_info = service.fetch_tasks_info(url).unwrap();
+        let tasks_info = service.fetch_tasks_info(task_url).unwrap();
 
         // Verify
         println!("{:#?}", tasks_info);
@@ -136,10 +139,10 @@ mod tests {
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
         let service = FetchTestSuiteService::new(dao);
 
-        let url = "https://atcoder.jp/contests/abc388";
+        let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();
 
         // Run
-        let test_suite = service.fetch_test_suite(url, &config).unwrap();
+        let test_suite = service.fetch_test_suite(&config, task_url).unwrap();
 
         // Verify
         println!("{:#?}", test_suite);

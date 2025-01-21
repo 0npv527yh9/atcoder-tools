@@ -1,10 +1,10 @@
 mod cli;
 mod config;
 mod dao;
+mod domain;
 mod dto;
 mod error;
 mod handler;
-mod parser;
 mod service;
 mod utils;
 

@@ -1,13 +1,14 @@
 use crate::{
     config::Config,
     dao::Dao,
+    domain::url::Url,
     dto::SessionData,
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
     service::fetch_test_case::FetchTestSuiteService,
 };
 
-pub fn fetch(url: &str, config: &Config) {
+pub fn fetch(config: &Config, task_url: Url) {
     let SessionData {
         cookies,
         csrf_token,
@@ -17,7 +18,9 @@ pub fn fetch(url: &str, config: &Config) {
     let dao = Dao::new(http_handler, csrf_token);
     let fetch_service = FetchTestSuiteService::new(dao);
 
-    let tasks = fetch_service.fetch_test_suite(url, config).unwrap_or_exit();
+    let tasks = fetch_service
+        .fetch_test_suite(config, task_url)
+        .unwrap_or_exit();
 
     println!("Saved: {tasks:?}");
 }
