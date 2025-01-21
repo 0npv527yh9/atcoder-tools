@@ -51,12 +51,12 @@ impl Html<page_type::Task> {
         self.0
             .select_all("span.h2")
             .into_iter()
-            .map(TitleTag)
+            .map(TaskTitleTag)
             .filter_map(Self::title_to_task)
             .collect()
     }
 
-    fn title_to_task(title_tag: TitleTag<'_>) -> Option<TaskTag<'_>> {
+    fn title_to_task(title_tag: TaskTitleTag<'_>) -> Option<TaskTag<'_>> {
         Some(TaskTag(ElementRef::wrap(title_tag.0.parent()?)?))
     }
 }
@@ -64,14 +64,14 @@ impl Html<page_type::Task> {
 #[derive(Debug)]
 struct TaskTag<'a>(ElementRef<'a>);
 
-struct TitleTag<'a>(ElementRef<'a>);
+struct TaskTitleTag<'a>(ElementRef<'a>);
 
 #[derive(Debug)]
 struct TestCaseTag<'a>(ElementRef<'a>);
 
 impl<'a> TaskTag<'a> {
     fn title(&self) -> Option<String> {
-        self.0.select_one("span.h2").map(TitleTag)?.title()
+        self.0.select_one("span.h2").map(TaskTitleTag)?.title()
     }
 
     fn test_case_tags(&self) -> Vec<TestCaseTag<'a>> {
@@ -98,7 +98,7 @@ impl<'a> TaskTag<'a> {
     }
 }
 
-impl TitleTag<'_> {
+impl TaskTitleTag<'_> {
     fn title(&self) -> Option<String> {
         self.0
             .inner_html()
