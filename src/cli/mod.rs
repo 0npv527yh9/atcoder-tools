@@ -12,6 +12,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Login
     Login,
 
     /// Fetch test suite
