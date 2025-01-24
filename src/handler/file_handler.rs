@@ -1,4 +1,5 @@
-use crate::dto::{SessionData, TaskInfo, TestCase, TestCases, TestSuite};
+use crate::dto::{TestCase, TestCases, TestSuite};
+use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 
 pub fn save_test_suite(test_suite: &TestSuite, test_dir: &str) -> Result<(), Error> {
@@ -22,15 +23,21 @@ pub fn save_test_suite(test_suite: &TestSuite, test_dir: &str) -> Result<(), Err
     Ok(())
 }
 
-pub fn save_tasks_info(tasks_info: &[TaskInfo], file_path: &str) -> Result<(), Error> {
-    let contents = serde_json::to_string_pretty(tasks_info)?;
+pub fn save<T>(file_path: &str, data: &T) -> Result<(), Error>
+where
+    T: Serialize,
+{
+    let contents = serde_json::to_string_pretty(data)?;
     fs::write(file_path, &contents)?;
     Ok(())
 }
 
-pub fn load_session_data(file_path: &str) -> Result<SessionData, Error> {
-    let session_data = serde_json::from_str(&fs::read_to_string(file_path)?)?;
-    Ok(session_data)
+pub fn load<T>(file_path: &str) -> Result<T, Error>
+where
+    T: DeserializeOwned,
+{
+    let data = serde_json::from_str(&fs::read_to_string(file_path)?)?;
+    Ok(data)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -44,6 +51,8 @@ pub enum Error {
 
 #[cfg(test)]
 mod tests {
+    use crate::dto::TaskInfo;
+
     use super::*;
 
     #[test]
@@ -80,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn test_save_tasks_info() {
+    fn test_save_data() {
         // Setup
         let tasks_info = [TaskInfo {
             task: "some-task".to_string(),
@@ -89,7 +98,7 @@ mod tests {
         }];
 
         // Run
-        let result = save_tasks_info(&tasks_info, "tests/data/tasks_info.json");
+        let result = save("tests/data/tasks_info.json", &tasks_info);
 
         // Verify
         assert!(result.is_ok());

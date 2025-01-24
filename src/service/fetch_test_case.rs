@@ -42,7 +42,7 @@ impl FetchTestSuiteService {
                 task_screen_name,
             })
             .collect_vec();
-        file_handler::save_tasks_info(&tasks_info, &config.file.tasks_info)?;
+        file_handler::save(&config.file.tasks_info, &tasks_info)?;
 
         let tasks = tasks_info
             .into_iter()
