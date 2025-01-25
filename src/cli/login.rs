@@ -1,5 +1,5 @@
 use crate::{
-    config::Config, dao::Dao, error::UnwrapOrExit, handler::http_handler::HttpHandler,
+    dao::Dao, dto::config::Config, error::UnwrapOrExit, handler::http_handler::HttpHandler,
     service::login::LoginService,
 };
 use ureq::Agent;

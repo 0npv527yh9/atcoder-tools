@@ -1,11 +1,10 @@
 use crate::{
-    config::Config,
     dao::{self, Dao},
     domain::{
         page_type,
         url::{self, FetchTaskUrl, Url},
     },
-    dto::{TaskInfo, TestCases},
+    dto::{config::Config, TaskInfo, TestCases},
     handler::file_handler,
 };
 use itertools::Itertools;
@@ -103,7 +102,7 @@ pub enum Error {
 mod tests {
     use super::*;
     use crate::{
-        config::{File, Url},
+        dto::config::{File, Url},
         handler::http_handler::HttpHandler,
     };
     use ureq::Agent;

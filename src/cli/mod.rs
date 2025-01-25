@@ -1,7 +1,7 @@
 mod fetch_test_suite;
 mod login;
 
-use crate::{config::Config, domain::url::FetchTaskUrl};
+use crate::{domain::url::FetchTaskUrl, dto::config::Config};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

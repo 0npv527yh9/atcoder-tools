@@ -1,8 +1,7 @@
 use crate::{
-    config::Config,
     dao::Dao,
     domain::url::FetchTaskUrl,
-    dto::SessionData,
+    dto::{config::Config, SessionData},
     error::UnwrapOrExit,
     handler::{file_handler, http_handler::HttpHandler},
     service::fetch_test_case::FetchTestSuiteService,

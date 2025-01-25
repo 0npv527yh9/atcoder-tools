@@ -40,6 +40,14 @@ where
     Ok(data)
 }
 
+pub fn load_toml<T>(file_path: &str) -> Result<T, Error>
+where
+    T: DeserializeOwned,
+{
+    let data = toml::from_str(&fs::read_to_string(file_path)?).unwrap();
+    Ok(data)
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
