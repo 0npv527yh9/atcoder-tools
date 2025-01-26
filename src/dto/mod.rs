@@ -1,3 +1,4 @@
+pub mod config;
 pub mod cookie;
 
 use crate::domain::{page_type, url::Url};

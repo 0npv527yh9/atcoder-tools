@@ -1,9 +1,8 @@
 use crate::{
     dao::{self, Dao},
     domain::{page_type, url::Url},
-    handler::terminal_handler,
+    handler::{file_handler, terminal_handler},
 };
-use std::fs;
 
 pub struct LoginService {
     dao: Dao,
@@ -29,12 +28,8 @@ impl LoginService {
 
     pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
         let session_data = self.dao.into_session_data();
-
-        let contents = serde_json::to_string_pretty(&session_data)
-            .map_err(|_| Error::Others("Session Data Serialization Failed".to_string()))?;
-
-        fs::write(file_path, contents)
-            .map_err(|_| Error::Others("Failed to save session data".to_string()))
+        file_handler::save(file_path, &session_data)?;
+        Ok(())
     }
 }
 
@@ -46,6 +41,6 @@ pub enum Error {
     #[error("Terminal Input Error: {:?}", .0)]
     Terminal(#[source] std::io::Error),
 
-    #[error("{}", .0)]
-    Others(String),
+    #[error(transparent)]
+    FileHandler(#[from] file_handler::Error),
 }

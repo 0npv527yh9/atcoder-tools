@@ -1,11 +1,10 @@
 use crate::{
-    config::Config,
     dao::{self, Dao},
     domain::{
         page_type,
         url::{self, FetchTaskUrl, Url},
     },
-    dto::{TaskInfo, TestCases},
+    dto::{config::Config, TaskInfo, TestCases},
     handler::file_handler,
 };
 use itertools::Itertools;
@@ -42,7 +41,7 @@ impl FetchTestSuiteService {
                 task_screen_name,
             })
             .collect_vec();
-        file_handler::save_tasks_info(&tasks_info, &config.file.tasks_info)?;
+        file_handler::save(&config.file.tasks_info, &tasks_info)?;
 
         let tasks = tasks_info
             .into_iter()
@@ -103,7 +102,7 @@ pub enum Error {
 mod tests {
     use super::*;
     use crate::{
-        config::{File, Url},
+        dto::config::{File, Url},
         handler::http_handler::HttpHandler,
     };
     use ureq::Agent;

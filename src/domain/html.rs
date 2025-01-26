@@ -48,16 +48,12 @@ impl Html<page_type::Task> {
     }
 
     fn parse_task_tags(&self) -> Vec<TaskTag<'_>> {
-        self.0
-            .select_all("span.h2")
+        self.select_all("#task-statement")
             .into_iter()
-            .map(TaskTitleTag)
-            .filter_map(Self::title_to_task)
+            .filter_map(|task_statement_tag| {
+                Some(TaskTag(ElementRef::wrap(task_statement_tag.parent()?)?))
+            })
             .collect()
-    }
-
-    fn title_to_task(title_tag: TaskTitleTag<'_>) -> Option<TaskTag<'_>> {
-        Some(TaskTag(ElementRef::wrap(title_tag.0.parent()?)?))
     }
 }
 
@@ -75,11 +71,13 @@ impl<'a> TaskTag<'a> {
     }
 
     fn test_case_tags(&self) -> Vec<TestCaseTag<'a>> {
+        let pattern = Regex::new(r"^(入|出)力例").unwrap();
+
         let test_case_labels = self
             .0
             .select_all("h3")
             .into_iter()
-            .filter(|h3| h3.inner_html().starts_with("Sample "));
+            .filter(|h3| pattern.is_match(&h3.inner_html()));
 
         test_case_labels
             .filter_map(|label| ElementRef::wrap(label.parent()?))
