@@ -1,3 +1,4 @@
+mod app;
 mod cli;
 mod dao;
 mod domain;
@@ -13,5 +14,5 @@ use std::path::Path;
 
 fn main() {
     let config = file_handler::load_toml(Path::new("config.toml")).unwrap_or_exit();
-    cli::run(config);
+    app::run(config);
 }
