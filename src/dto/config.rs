@@ -1,5 +1,6 @@
 use crate::domain::{page_type, url};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
@@ -9,9 +10,9 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize)]
 pub struct File {
-    pub session_data: String,
-    pub tasks_info: String,
-    pub test: String,
+    pub session_data: PathBuf,
+    pub tasks_info: PathBuf,
+    pub test: PathBuf,
 }
 
 #[derive(Serialize, Deserialize)]

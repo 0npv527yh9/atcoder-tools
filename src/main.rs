@@ -9,8 +9,9 @@ mod utils;
 
 use error::UnwrapOrExit;
 use handler::file_handler;
+use std::path::Path;
 
 fn main() {
-    let config = file_handler::load_toml("config.toml").unwrap_or_exit();
+    let config = file_handler::load_toml(Path::new("config.toml")).unwrap_or_exit();
     cli::run(config);
 }
