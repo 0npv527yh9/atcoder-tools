@@ -105,6 +105,7 @@ mod tests {
         dto::config::{File, Url},
         handler::http_handler::HttpHandler,
     };
+    use std::path::PathBuf;
     use ureq::Agent;
 
     #[test]
@@ -131,9 +132,9 @@ mod tests {
         // Setup
         let config = Config {
             file: File {
-                session_data: "".to_string(),
-                tasks_info: "tests/data/tasks_info.toml".to_string(),
-                test: "tests/data/test".to_string(),
+                session_data: PathBuf::new(),
+                tasks_info: PathBuf::from("tests/data/tasks_info.toml"),
+                test: PathBuf::from("tests/data/test"),
             },
             url: Url {
                 homepage: "".to_string().into(),

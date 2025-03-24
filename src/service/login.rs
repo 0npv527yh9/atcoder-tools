@@ -3,6 +3,7 @@ use crate::{
     domain::{page_type, url::Url},
     handler::{file_handler, terminal_handler},
 };
+use std::path::Path;
 
 pub struct LoginService {
     dao: Dao,
@@ -26,7 +27,7 @@ impl LoginService {
         })
     }
 
-    pub fn save_session_data(self, file_path: &str) -> Result<(), Error> {
+    pub fn save_session_data(self, file_path: &Path) -> Result<(), Error> {
         let session_data = self.dao.into_session_data();
         file_handler::save(file_path, &session_data)?;
         Ok(())

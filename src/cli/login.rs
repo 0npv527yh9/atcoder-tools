@@ -19,5 +19,5 @@ pub fn login(config: &Config) {
         .save_session_data(session_data_file)
         .unwrap_or_exit();
 
-    println!("{session_data_file} Created");
+    println!("{} Created", session_data_file.display());
 }
