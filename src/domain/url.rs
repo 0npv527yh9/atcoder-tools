@@ -62,6 +62,24 @@ impl FromStr for FetchTaskUrl {
     }
 }
 
+impl FetchTaskUrl {
+    pub fn task_url(&self) -> &Url<page_type::Task> {
+        match self {
+            FetchTaskUrl::Contest {
+                tasks_print_url, ..
+            } => tasks_print_url,
+            FetchTaskUrl::Task { task_url, .. } => task_url,
+        }
+    }
+
+    pub fn contest_url(&self) -> &Url<page_type::ContestHome> {
+        match self {
+            FetchTaskUrl::Contest { contest_url, .. } => contest_url,
+            FetchTaskUrl::Task { contest_url, .. } => contest_url,
+        }
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Failed to parse URL: {}", .0)]
