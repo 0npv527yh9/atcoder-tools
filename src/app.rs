@@ -9,7 +9,7 @@ use clap::Parser;
 
 pub fn run(config: Config) {
     match Cli::parse().command {
-        Command::Login => login::login(&config),
+        Command::Login => login::run(&config),
         Command::FetchTestSuite { url } => fetch_test_suite::run(&config, url),
     }
 }

@@ -5,7 +5,6 @@ mod domain;
 mod dto;
 mod error;
 mod handler;
-mod service;
 mod utils;
 
 use error::UnwrapOrExit;
