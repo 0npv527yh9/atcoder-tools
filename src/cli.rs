@@ -1,17 +1,14 @@
-mod fetch_test_suite;
-mod login;
-
-use crate::{domain::url::FetchTaskUrl, dto::config::Config};
+use crate::domain::url::FetchTaskUrl;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-struct Cli {
+pub struct Cli {
     #[clap(subcommand)]
-    command: Command,
+    pub command: Command,
 }
 
 #[derive(Subcommand)]
-enum Command {
+pub enum Command {
     /// Login
     Login,
 
@@ -26,11 +23,4 @@ enum Command {
         #[arg(verbatim_doc_comment)]
         url: FetchTaskUrl,
     },
-}
-
-pub fn run(config: Config) {
-    match Cli::parse().command {
-        Command::Login => login::login(&config),
-        Command::FetchTestSuite { url } => fetch_test_suite::fetch(&config, url),
-    }
 }

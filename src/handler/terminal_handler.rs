@@ -7,7 +7,7 @@ pub fn read_credentials() -> Result<Credentials> {
 }
 
 pub fn ask_for_retry() -> Result<bool> {
-    let input = rprompt::prompt_reply("Retry? ([y]/n):")?.to_lowercase();
+    let input = rprompt::prompt_reply("Retry? (y/[n]):")?.to_lowercase();
     Ok(&input == "y" || &input == "yes")
 }
 
