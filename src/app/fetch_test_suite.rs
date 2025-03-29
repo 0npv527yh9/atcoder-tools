@@ -27,7 +27,7 @@ fn setup(config: &Config) -> Dao {
 
 fn fetch(config: &Config, dao: &Dao, task_url: FetchTaskUrl) -> Result<(), Error> {
     let test_suite = dao.fetch_test_suite(task_url.task_url())?;
-    file_handler::save_test_suite(&test_suite, &config.file.test)?;
+    file_handler::save_test_suite(&config.file.test, &test_suite)?;
 
     let task_names = test_suite
         .into_iter()

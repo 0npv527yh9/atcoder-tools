@@ -1,15 +1,18 @@
-use crate::dto::{TestCase, TestCases, TestSuite};
+use crate::{
+    domain::path::TaskTestPath,
+    dto::{TestCase, TestCases, TestSuite},
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
-    fs,
+    fs::{self},
     path::{Path, PathBuf},
 };
 
-pub fn save_test_suite(test_suite: &TestSuite, test_dir: &Path) -> Result<(), Error> {
+pub fn save_test_suite(test_dir: &Path, test_suite: &TestSuite) -> Result<(), Error> {
     for TestCases { task, test_cases } in test_suite {
-        let task_test_dir = test_dir.join(task);
-        let input_dir = task_test_dir.join("in");
-        let output_dir = task_test_dir.join("out");
+        let test_path = TaskTestPath::new(test_dir, task);
+        let input_dir = test_path.input_dir();
+        let output_dir = test_path.output_dir();
 
         fs::create_dir_all(&input_dir).with_path(&input_dir)?;
         fs::create_dir_all(&output_dir).with_path(&output_dir)?;
@@ -17,8 +20,8 @@ pub fn save_test_suite(test_suite: &TestSuite, test_dir: &Path) -> Result<(), Er
         for (i, TestCase { input, output }) in test_cases.iter().enumerate() {
             let file = format!("{}.txt", i + 1);
 
-            let input_file = input_dir.join(&file);
-            let output_file = output_dir.join(&file);
+            let input_file = test_path.input_file(&file);
+            let output_file = test_path.output_file(&file);
 
             fs::write(&input_file, input).with_path(&input_file)?;
             fs::write(&output_file, output).with_path(&output_file)?;
@@ -67,7 +70,7 @@ pub enum Error {
     Serde { message: String, path: PathBuf },
 }
 
-trait WithPath<T, E> {
+pub trait WithPath<T, E> {
     fn with_path(self, path: &Path) -> Result<T, E>;
 }
 
@@ -131,7 +134,7 @@ mod tests {
         ];
 
         // Run
-        let result = save_test_suite(&test_suite, Path::new("tests/data/test"));
+        let result = save_test_suite(Path::new("tests/data/test"), &test_suite);
 
         // Verify
         assert!(result.is_ok());
