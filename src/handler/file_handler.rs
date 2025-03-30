@@ -8,7 +8,8 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     env,
-    fs::{self},
+    ffi::OsString,
+    fs,
     path::{Path, PathBuf},
 };
 
@@ -32,6 +33,34 @@ pub fn save_test_suite(test_dir: &Path, test_suite: &TestSuite) -> Result<(), Er
         }
     }
     Ok(())
+}
+
+pub fn load_test_suite(
+    test_dir: &Path,
+    task: &str,
+    files: Option<Vec<OsString>>,
+) -> Result<TestCases, Error> {
+    let test_path = TaskTestPath::new(test_dir, task);
+
+    let files = files.map(Ok).unwrap_or_else(|| test_path.list_files())?;
+
+    let test_cases = files
+        .iter()
+        .map(|file| {
+            let input_file = test_path.input_file(file);
+            let output_file = test_path.output_file(file);
+
+            let input = fs::read_to_string(&input_file).with_path(&input_file)?;
+            let output = fs::read_to_string(&output_file).with_path(&output_file)?;
+
+            Ok(TestCase { input, output })
+        })
+        .collect::<Result<_, _>>()?;
+
+    Ok(TestCases {
+        task: task.to_string(),
+        test_cases,
+    })
 }
 
 pub fn save<T>(file_path: &Path, data: &T) -> Result<(), Error>
