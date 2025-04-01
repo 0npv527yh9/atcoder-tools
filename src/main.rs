@@ -7,11 +7,14 @@ mod error;
 mod handler;
 mod utils;
 
-use error::UnwrapOrExit;
-use handler::file_handler;
-use std::path::Path;
+use dto::config::Config;
 
 fn main() {
-    let config = file_handler::load_toml(Path::new("config.toml")).unwrap_or_exit();
+    let config = load_config();
     app::run(config);
+}
+
+fn load_config() -> Config {
+    let config = include_str!("../config.toml");
+    toml::from_str(config).expect("config.toml is not valid")
 }
