@@ -1,0 +1,8 @@
+[file]
+session_data = "session_data.json"
+tasks_info = "tasks_info.json"
+test = "test"
+
+[url]
+homepage = "https://atcoder.jp/home"
+login = "https://atcoder.jp/login"
