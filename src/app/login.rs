@@ -14,16 +14,17 @@ pub fn run(config: &Config) {
 
 fn setup(config: &Config) -> Dao {
     let http_handler = HttpHandler::new(Agent::new());
-    let csrf_token = Dao::fetch_csrf_token(&http_handler, &config.url.homepage).unwrap_or_exit();
+    let csrf_token =
+        Dao::fetch_csrf_token(&http_handler, &config.app_config.url.homepage).unwrap_or_exit();
     Dao::new(http_handler, csrf_token)
 }
 
 fn login(config: &Config, dao: Dao) -> Result<(), Error> {
-    interactive_login(&dao, &config.url.login)?;
+    interactive_login(&dao, &config.app_config.url.login)?;
 
     println!("Login Successful");
 
-    let session_data_file = &config.file.session_data;
+    let session_data_file = &config.app_config.path.session_data;
     file_handler::save(session_data_file, &dao.into_session_data())?;
     println!("{} Created", session_data_file.display());
 

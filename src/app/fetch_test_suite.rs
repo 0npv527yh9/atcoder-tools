@@ -19,7 +19,7 @@ fn setup(config: &Config) -> Dao {
     let SessionData {
         cookies,
         csrf_token,
-    } = file_handler::load(&config.file.session_data).unwrap_or_exit();
+    } = file_handler::load(&config.app_config.path.session_data).unwrap_or_exit();
 
     let http_handler = HttpHandler::with_cookies(cookies);
     Dao::new(http_handler, csrf_token)
@@ -27,7 +27,7 @@ fn setup(config: &Config) -> Dao {
 
 fn fetch(config: &Config, dao: &Dao, task_url: FetchTaskUrl) -> Result<(), Error> {
     let test_suite = dao.fetch_test_suite(task_url.task_url())?;
-    file_handler::save_test_suite(&config.file.test, &test_suite)?;
+    file_handler::save_test_suite(&config.app_config.path.test, &test_suite)?;
 
     let task_names = test_suite
         .into_iter()
@@ -38,7 +38,7 @@ fn fetch(config: &Config, dao: &Dao, task_url: FetchTaskUrl) -> Result<(), Error
 
     let task_screen_names = fetch_task_screen_names(dao, &task_url)?;
     let task_info = create_task_info(task_names, task_screen_names, task_url.contest_url());
-    file_handler::save(&config.file.tasks_info, &task_info)?;
+    file_handler::save(&config.app_config.path.tasks_info, &task_info)?;
 
     Ok(())
 }
