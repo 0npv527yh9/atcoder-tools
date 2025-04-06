@@ -1,7 +1,9 @@
-[file]
-session_data = "session_data.json"
-tasks_info = "tasks_info.json"
+[path]
+session_data = ".atcoder/session_data.json"
+tasks_info = ".atcoder/tasks_info.json"
 test = "test"
+user_config = ".atcoder/config.toml"
+metadata = ".atcoder"
 
 [url]
 homepage = "https://atcoder.jp/home"

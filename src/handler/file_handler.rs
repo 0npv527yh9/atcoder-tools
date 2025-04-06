@@ -1,9 +1,13 @@
 use crate::{
     domain::path::TaskTestPath,
-    dto::{TestCase, TestCases, TestSuite},
+    dto::{
+        config::{AppConfig, Config},
+        TestCase, TestCases, TestSuite,
+    },
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
+    env,
     fs::{self},
     path::{Path, PathBuf},
 };
@@ -55,6 +59,41 @@ where
     let data = toml::from_str(&fs::read_to_string(file_path).with_path(file_path)?)
         .with_path(file_path)?;
     Ok(data)
+}
+
+pub fn load_config() -> Result<Config, Error> {
+    // Load config for app
+    let app_config: AppConfig = toml::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/config.toml"
+    )))
+    .with_path(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/config.toml"
+    )))?;
+
+    // Move to the root directory for app
+    let metadata_path = find_in_ancestors(&app_config.path.metadata)
+        .unwrap_or_else(|| panic!("Failed to {:?} in ancestors", app_config.path.metadata));
+    let root_path = metadata_path.parent().unwrap();
+    env::set_current_dir(root_path).with_path(root_path)?;
+
+    // Load config for user
+    let user_config = load_toml(&app_config.path.user_config)?;
+
+    Ok(Config {
+        app_config,
+        user_config,
+    })
+}
+
+fn find_in_ancestors(target: &Path) -> Option<PathBuf> {
+    let current_dir = env::current_dir().expect("Failed to get current directory");
+
+    current_dir
+        .ancestors()
+        .map(|p| p.join(target))
+        .find(|path| path.is_dir())
 }
 
 #[derive(thiserror::Error, Debug)]
