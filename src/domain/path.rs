@@ -1,7 +1,6 @@
 use crate::handler::file_handler::{Error, WithPath};
 use itertools::Itertools;
 use std::{
-    ffi::OsString,
     fs::{self, DirEntry},
     path::{Path, PathBuf},
 };
@@ -33,7 +32,7 @@ impl TaskTestPath {
         self.output_dir().join(file)
     }
 
-    pub fn list_files(&self) -> Result<Vec<OsString>, Error> {
+    pub fn list_files(&self) -> Result<Vec<String>, Error> {
         let input_dir = self.input_dir();
 
         let entries: Vec<DirEntry> = fs::read_dir(&input_dir)
@@ -41,12 +40,13 @@ impl TaskTestPath {
             .map(|entry| entry.with_path(&input_dir))
             .collect::<Result<_, _>>()?;
 
-        Ok(entries
+        entries
             .into_iter()
             .filter(is_file)
-            .map(|entry| entry.file_name())
+            .map(|entry| entry.file_name().into_string())
             .sorted()
-            .collect())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Error::OsString)
     }
 }
 

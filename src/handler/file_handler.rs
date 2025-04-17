@@ -2,7 +2,7 @@ use crate::{
     domain::path::TaskTestPath,
     dto::{
         config::{AppConfig, Config},
-        TestCase, TestCases, TestSuite,
+        TestCase, TestCaseFile, TestCases, TestSuite,
     },
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -35,32 +35,32 @@ pub fn save_test_suite(test_dir: &Path, test_suite: &TestSuite) -> Result<(), Er
     Ok(())
 }
 
-pub fn load_test_suite(
+pub fn load_test_cases(
     test_dir: &Path,
     task: &str,
-    files: Option<Vec<OsString>>,
-) -> Result<TestCases, Error> {
+    files: Option<Vec<String>>,
+) -> Result<Vec<TestCaseFile>, Error> {
     let test_path = TaskTestPath::new(test_dir, task);
 
     let files = files.map(Ok).unwrap_or_else(|| test_path.list_files())?;
 
     let test_cases = files
-        .iter()
+        .into_iter()
         .map(|file| {
-            let input_file = test_path.input_file(file);
-            let output_file = test_path.output_file(file);
+            let input_file = test_path.input_file(&file);
+            let output_file = test_path.output_file(&file);
 
             let input = fs::read_to_string(&input_file).with_path(&input_file)?;
             let output = fs::read_to_string(&output_file).with_path(&output_file)?;
 
-            Ok(TestCase { input, output })
+            Ok(TestCaseFile {
+                test_case: TestCase { input, output },
+                file,
+            })
         })
         .collect::<Result<_, _>>()?;
 
-    Ok(TestCases {
-        task: task.to_string(),
-        test_cases,
-    })
+    Ok(test_cases)
 }
 
 pub fn save<T>(file_path: &Path, data: &T) -> Result<(), Error>
@@ -136,35 +136,38 @@ pub enum Error {
 
     #[error("{message}: {path}")]
     Serde { message: String, path: PathBuf },
+
+    #[error("Failed to convert OsString to String: {:?}", .0)]
+    OsString(OsString),
 }
 
 pub trait WithPath<T, E> {
-    fn with_path(self, path: &Path) -> Result<T, E>;
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, E>;
 }
 
 impl<T> WithPath<T, Error> for Result<T, std::io::Error> {
-    fn with_path(self, path: &Path) -> Result<T, Error> {
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, Error> {
         self.map_err(|source| Error::IO {
             source,
-            path: path.to_path_buf(),
+            path: path.as_ref().to_path_buf(),
         })
     }
 }
 
 impl<T> WithPath<T, Error> for Result<T, serde_json::Error> {
-    fn with_path(self, path: &Path) -> Result<T, Error> {
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, Error> {
         self.map_err(|source| Error::Serde {
             message: source.to_string(),
-            path: path.to_path_buf(),
+            path: path.as_ref().to_path_buf(),
         })
     }
 }
 
 impl<T> WithPath<T, Error> for Result<T, toml::de::Error> {
-    fn with_path(self, path: &Path) -> Result<T, Error> {
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, Error> {
         self.map_err(|source| Error::Serde {
             message: source.to_string(),
-            path: path.to_path_buf(),
+            path: path.as_ref().to_path_buf(),
         })
     }
 }

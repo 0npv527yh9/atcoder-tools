@@ -4,6 +4,7 @@ pub mod cookie;
 use crate::domain::{page_type, url::Url};
 use cookie_store::Cookie;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
 pub struct SessionData {
@@ -24,6 +25,12 @@ pub struct TestCases {
 }
 
 pub type TestSuite = Vec<TestCases>;
+
+#[derive(Debug)]
+pub struct TestCaseFile {
+    pub test_case: TestCase,
+    pub file: String,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskInfo {
