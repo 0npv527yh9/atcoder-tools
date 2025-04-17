@@ -45,3 +45,10 @@ pub struct Command {
     pub args: Vec<String>,
     pub working_dir: Option<PathBuf>,
 }
+
+pub struct Diff {
+    pub input: String,
+    pub expected: String,
+    pub actual: String,
+    pub file: String,
+}
