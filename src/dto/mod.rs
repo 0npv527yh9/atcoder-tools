@@ -31,3 +31,10 @@ pub struct TaskInfo {
     pub contest_url: Url<page_type::ContestHome>,
     pub task_screen_name: String,
 }
+
+#[derive(Deserialize)]
+pub struct Command {
+    pub command: String,
+    pub args: Vec<String>,
+    pub working_dir: Option<PathBuf>,
+}
