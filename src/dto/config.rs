@@ -35,7 +35,7 @@ pub struct UserConfig {
 }
 
 impl UserConfig {
-    fn language_config(&self, language: &str) -> Option<&LanguageConfig> {
+    pub fn language_config(&self, language: &str) -> Option<&LanguageConfig> {
         self.language.iter().find(|config| config.name == language)
     }
 }
