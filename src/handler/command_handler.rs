@@ -45,7 +45,10 @@ impl ReturnType for process::Output {
     where
         Self: Sized,
     {
-        let mut child = command.stdout(Stdio::piped()).spawn()?;
+        let mut child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
 
         if let Some(input) = input {
             if let Some(stdin) = &mut child.stdin {

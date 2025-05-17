@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
 use crate::domain::{page_type, url};
+use crate::dto::Command;
 use std::path::PathBuf;
-
 pub struct Config {
     pub app_config: AppConfig,
     pub user_config: UserConfig,
@@ -35,7 +35,7 @@ pub struct UserConfig {
 }
 
 impl UserConfig {
-    fn language_config(&self, language: &str) -> Option<&LanguageConfig> {
+    pub fn language_config(&self, language: &str) -> Option<&LanguageConfig> {
         self.language.iter().find(|config| config.name == language)
     }
 }
@@ -45,6 +45,6 @@ pub struct LanguageConfig {
     name: String,
     id: String,
     src_path: PathBuf,
-    compile: Vec<String>,
-    execute: Vec<String>,
+    pub compile: Option<Command>,
+    pub execute: Command,
 }
