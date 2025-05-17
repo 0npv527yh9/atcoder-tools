@@ -24,7 +24,7 @@ pub fn print_diffs(diffs: &[Diff], verbose: bool) -> Result<(), Error> {
 
     for diff in diffs {
         let diff = make_diff(diff, verbose, (w as usize, h as usize));
-        println!("{diff}");
+        println!("{diff}\n");
     }
 
     Ok(())

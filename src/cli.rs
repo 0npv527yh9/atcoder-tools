@@ -34,7 +34,7 @@ pub enum Command {
         /// e.g. "--test-cases 1 3" specifies that test cases 1 and 3 will be used, and test case 2 will be skipped.
         /// If not specified, all test cases will be used.
         #[arg(verbatim_doc_comment, short, long = "test-cases")]
-        test_case_filter: Option<Vec<String>>,
+        test_cases: Option<Vec<String>>,
 
         #[arg(long, short)]
         verbose: bool,

@@ -15,11 +15,11 @@ pub fn run(
     config: &Config,
     language: String,
     task: String,
-    test_case_filter: Option<Vec<String>>,
+    test_cases: Option<Vec<String>>,
     verbose: bool,
 ) -> bool {
     let (language_config, test_dir) = setup(config, language).unwrap_or_exit();
-    test(language_config, test_dir, task, test_case_filter, verbose).unwrap_or_exit()
+    let ac = test(language_config, test_dir, task, test_cases, verbose).unwrap_or_exit();
 }
 
 fn setup(config: &Config, language: String) -> Result<(&LanguageConfig, &Path), Error> {

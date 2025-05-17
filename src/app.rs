@@ -15,7 +15,7 @@ pub fn run(config: Config) {
         Command::Test {
             language,
             task,
-            test_case_filter: test_cases,
+            test_cases,
             verbose,
         } => {
             test::run(&config, language, task, test_cases, verbose);
