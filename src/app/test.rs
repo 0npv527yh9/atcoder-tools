@@ -8,7 +8,7 @@ use crate::{
 };
 use std::{
     path::Path,
-    process::{ExitStatus, Output},
+    process::{self, ExitStatus, Output},
 };
 
 pub fn run(
@@ -17,9 +17,14 @@ pub fn run(
     task: String,
     test_cases: Option<Vec<String>>,
     verbose: bool,
-) -> bool {
+) {
     let (language_config, test_dir) = setup(config, language).unwrap_or_exit();
     let ac = test(language_config, test_dir, task, test_cases, verbose).unwrap_or_exit();
+    if ac {
+        println!("AC");
+    } else {
+        process::exit(1);
+    }
 }
 
 fn setup(config: &Config, language: String) -> Result<(&LanguageConfig, &Path), Error> {
@@ -216,7 +221,7 @@ mod tests {
             })) => {
                 assert_eq!(input, "input");
                 assert_eq!(expected, "expected");
-                assert_eq!(actual, "e");
+                assert_eq!(actual, "e\n\n");
                 assert_eq!(file, "test.txt");
             }
             _ => unreachable!(),
