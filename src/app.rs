@@ -23,6 +23,7 @@ pub fn run(config: Config) {
         } => {
             test::run(&config, language, task, test_cases, verbose);
         }
+        Command::Submit { language, task } => todo!(),
     }
 }
 

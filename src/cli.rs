@@ -43,6 +43,10 @@ pub enum Command {
         #[arg(long, short)]
         verbose: bool,
     },
+
+    /// Submit
+    #[command(visible_alias = "s")]
+    Submit { language: String, task: String },
 }
 
 fn append_txt_extension(s: &str) -> Result<String, String> {
