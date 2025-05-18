@@ -10,7 +10,11 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     /// Login
-    Login,
+    Login {
+        /// Check login status
+        #[arg(short, long)]
+        check: bool,
+    },
 
     /// Fetch test suite
     #[command(name = "fetch-test", visible_alias = "f")]

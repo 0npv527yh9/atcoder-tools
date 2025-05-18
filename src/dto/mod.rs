@@ -2,6 +2,7 @@ pub mod config;
 pub mod cookie;
 
 use crate::domain::{page_type, url::Url};
+use ::time::OffsetDateTime;
 use cookie_store::Cookie;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -10,6 +11,14 @@ use std::path::PathBuf;
 pub struct SessionData {
     pub cookies: Vec<Cookie<'static>>,
     pub csrf_token: String,
+}
+
+impl SessionData {
+    pub fn expired_datetime(&self) -> Option<OffsetDateTime> {
+        self.cookies
+            .iter()
+            .find_map(|cookie| cookie.expires_datetime())
+    }
 }
 
 #[derive(Debug)]

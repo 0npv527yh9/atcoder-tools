@@ -70,6 +70,11 @@ impl Dao {
             csrf_token: self.csrf_token,
         }
     }
+
+    pub fn check_login(&self, url: &Url<page_type::Home>) -> Result<bool, Error> {
+        let html = self.http_handler.get(url)?;
+        Ok(!html.has_sign_up_button())
+    }
 }
 
 pub mod dto {

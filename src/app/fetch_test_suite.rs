@@ -1,3 +1,4 @@
+use super::save_dao;
 use crate::{
     dao::{self, Dao},
     domain::{
@@ -13,6 +14,7 @@ use itertools::Itertools;
 pub fn run(config: &Config, task_url: FetchTaskUrl) {
     let dao = setup(config);
     fetch(config, &dao, task_url).unwrap_or_exit();
+    save_dao(config, dao).unwrap_or_exit();
 }
 
 fn setup(config: &Config) -> Dao {

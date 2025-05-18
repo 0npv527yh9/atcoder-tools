@@ -1,22 +1,21 @@
+use super::{setup_dao_with_fetching, setup_dao_with_loading};
 use crate::{
+    app::save_dao,
     dao::{self, Dao},
     domain::{page_type, url::Url},
     dto::config::Config,
     error::UnwrapOrExit,
-    handler::{file_handler, http_handler::HttpHandler, terminal_handler},
+    handler::{file_handler, terminal_handler},
 };
-use ureq::Agent;
 
-pub fn run(config: &Config) {
-    let dao = setup(config);
-    login(config, dao).unwrap_or_exit();
-}
-
-fn setup(config: &Config) -> Dao {
-    let http_handler = HttpHandler::new(Agent::new());
-    let csrf_token =
-        Dao::fetch_csrf_token(&http_handler, &config.app_config.url.homepage).unwrap_or_exit();
-    Dao::new(http_handler, csrf_token)
+pub fn run(config: &Config, check: bool) {
+    if check {
+        let dao = setup_dao_with_loading(config).unwrap_or_exit();
+        check_login(config, dao).unwrap_or_exit();
+    } else {
+        let dao = setup_dao_with_fetching(config).unwrap_or_exit();
+        login(config, dao).unwrap_or_exit();
+    }
 }
 
 fn login(config: &Config, dao: Dao) -> Result<(), Error> {
@@ -24,8 +23,8 @@ fn login(config: &Config, dao: Dao) -> Result<(), Error> {
 
     println!("Login Successful");
 
+    save_dao(config, dao)?;
     let session_data_file = &config.app_config.path.session_data;
-    file_handler::save(session_data_file, &dao.into_session_data())?;
     println!("{} Created", session_data_file.display());
 
     Ok(())
@@ -41,6 +40,22 @@ fn interactive_login(dao: &Dao, url: &Url<page_type::Login>) -> Result<(), Error
             Err(Error::Dao(error))
         }
     })
+}
+
+fn check_login(config: &Config, dao: Dao) -> Result<bool, Error> {
+    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
+
+    if logged_in {
+        println!("Logged in");
+
+        let session_data = dao.into_session_data();
+        file_handler::save(&config.app_config.path.session_data, &session_data);
+        println!("Expires: {:?}", session_data.expired_datetime());
+    } else {
+        println!("Not logged in");
+    }
+
+    Ok(logged_in)
 }
 
 #[derive(thiserror::Error, Debug)]
