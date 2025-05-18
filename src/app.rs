@@ -10,7 +10,7 @@ use clap::Parser;
 
 pub fn run(config: Config) {
     match Cli::parse().command {
-        Command::Login => login::run(&config),
+        Command::Login { check } => login::run(&config, check),
         Command::FetchTestSuite { url } => fetch_test_suite::run(&config, url),
         Command::Test {
             language,
