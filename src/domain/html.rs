@@ -159,7 +159,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
+    use crate::{handler::http_handler::HttpHandler, utils};
 
     #[test]
     #[ignore]
@@ -256,5 +256,34 @@ mod tests {
         // Verify
         println!("{task_screen_names:#?}");
         assert_eq!(7, task_screen_names.len());
+    }
+
+    #[test]
+    fn test_sign_up_button_before_login() {
+        // Setup
+        let html = utils::test::load_homepage_html();
+
+        // Run
+        let has_sign_up_button = html.has_sign_up_button();
+
+        // Verify
+        assert!(has_sign_up_button);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_sign_up_button_after_login() {
+        // Setup
+        let session_data = utils::test::load_session_data();
+        let http_handler = HttpHandler::with_cookies(session_data.cookies);
+
+        // Run
+        let html: Html<page_type::Home> = http_handler
+            .get(&"https://atcoder.jp/home".to_string().into())
+            .unwrap();
+        let has_sign_up_button = html.has_sign_up_button();
+
+        // Verify
+        assert!(!has_sign_up_button);
     }
 }
