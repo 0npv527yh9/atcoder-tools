@@ -32,6 +32,12 @@ impl Html<page_type::Home> {
     pub fn title(&self) -> Option<String> {
         self.select_one("title").map(|element| element.inner_html())
     }
+
+    pub fn has_sign_up_button(&self) -> bool {
+        self.select_one("#navbar-collapse > .navbar-right > li:nth-child(2) > a")
+            .map(|element| element.inner_html())
+            .map_or(false, |name| name == "Sign Up")
+    }
 }
 
 impl Html<page_type::Task> {
