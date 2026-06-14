@@ -1,0 +1,4 @@
+interface:
+  display_name: "TODO 駆動リファクタリング"
+  short_description: "番号付き TODO を安全に計画・実装する。"
+  default_prompt: "Use $todo-driven-refactor to handle TODO item 1 from planning through implementation."
