@@ -49,7 +49,7 @@ fn check_login(config: &Config, dao: Dao) -> Result<bool, Error> {
         println!("Logged in");
 
         let session_data = dao.into_session_data();
-        file_handler::save(&config.app_config.path.session_data, &session_data);
+        file_handler::save(&config.app_config.path.session_data, &session_data)?;
         println!("Expires: {:?}", session_data.expired_datetime());
     } else {
         println!("Not logged in");

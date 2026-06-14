@@ -4,7 +4,6 @@
 
 ## P0: すぐ直したい
 
-- [ ] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
 - [ ] 2. ログイン時は保存済み CSRF token に頼らず、毎回新規取得する方針を明確にしてテストする。
 - [ ] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
 - [ ] 4. `file_handler::load_config` の `panic!` を通常のエラーにする。
@@ -41,4 +40,4 @@
 
 ## Done
 
-まだありません。
+- [x] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
