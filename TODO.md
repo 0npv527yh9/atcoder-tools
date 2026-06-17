@@ -26,6 +26,7 @@
 - [ ] 17. `http_handler::with_cookies` を外部 DI で置き換えられるか検討する。
 - [ ] 28. ビルド影響範囲と責務境界を見直し、`infra::atcoder` や file system adapter を workspace crate として分離する必要があるか判断する。
 - [ ] 29. `runner` の DAO/session 組み立て helper 名を見直し、`setup` ではなく「何を元に何を作るか」が分かる名前にする。
+- [ ] 30. usecase の戻り値から `Dao` を外し、session 保存 I/F を `SessionData` または意味のある結果型に整理する。
 
 ## P3: 品質改善
 
