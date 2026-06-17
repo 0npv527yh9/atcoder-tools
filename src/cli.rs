@@ -1,4 +1,4 @@
-use crate::domain::url::FetchTaskUrl;
+use crate::infra::atcoder::url::FetchTaskUrl;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

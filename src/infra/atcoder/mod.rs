@@ -1,7 +1,11 @@
+pub mod html;
+pub mod page_type;
+pub mod url;
+
+use self::url::Url;
 use crate::{
-    domain::{page_type, url::Url},
     dto::{SessionData, TestSuite},
-    handler::{
+    infra::{
         http_handler::{self, HttpHandler},
         terminal_handler::Credentials,
     },

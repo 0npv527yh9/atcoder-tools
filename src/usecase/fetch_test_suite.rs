@@ -1,13 +1,17 @@
 use super::save_dao;
 use crate::{
-    dao::{self, Dao},
-    domain::{
-        page_type::ContestHome,
-        url::{self, FetchTaskUrl, Url},
-    },
     dto::{config::Config, SessionData, TaskInfo},
     error::UnwrapOrExit,
-    handler::{file_handler, http_handler::HttpHandler},
+    infra::{
+        atcoder::{
+            self,
+            page_type::ContestHome,
+            url::{self, FetchTaskUrl, Url},
+            Dao,
+        },
+        file_handler,
+        http_handler::HttpHandler,
+    },
 };
 use itertools::Itertools;
 
@@ -75,7 +79,7 @@ fn create_task_info(
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Dao(#[from] dao::Error),
+    Dao(#[from] atcoder::Error),
 
     #[error(transparent)]
     FileHandler(#[from] file_handler::Error),
@@ -87,7 +91,6 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::handler::http_handler::HttpHandler;
     use ureq::Agent;
 
     #[test]

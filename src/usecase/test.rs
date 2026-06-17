@@ -4,7 +4,7 @@ use crate::{
         Command, Diff, TestCase, TestCaseFile,
     },
     error::UnwrapOrExit,
-    handler::{command_handler, file_handler, terminal_handler},
+    infra::{command_handler, file_handler, terminal_handler},
 };
 use std::{
     path::Path,

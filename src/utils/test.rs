@@ -1,6 +1,6 @@
 use crate::{
-    domain::{html::Html, page_type},
     dto::SessionData,
+    infra::atcoder::{html::Html, page_type},
 };
 use std::{fs, path::Path};
 use ureq::Agent;

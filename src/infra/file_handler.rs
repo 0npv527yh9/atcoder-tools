@@ -1,9 +1,9 @@
 use crate::{
-    domain::path::TaskTestPath,
     dto::{
         config::{AppConfig, Config},
         TestCase, TestCaseFile, TestCases, TestSuite,
     },
+    infra::test_path::TaskTestPath,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{

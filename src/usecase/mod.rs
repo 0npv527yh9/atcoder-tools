@@ -1,33 +1,18 @@
-mod fetch_test_suite;
-mod login;
-mod test;
+pub mod fetch_test_suite;
+pub mod login;
+pub mod test;
 
 use crate::{
-    cli::{Cli, Command},
-    dao::{self, Dao},
     dto::{config::Config, SessionData},
-    handler::{file_handler, http_handler::HttpHandler},
+    infra::{
+        atcoder::{self, Dao},
+        file_handler,
+        http_handler::HttpHandler,
+    },
 };
-use clap::Parser;
 use ureq::Agent;
 
-pub fn run(config: Config) {
-    match Cli::parse().command {
-        Command::Login { check } => login::run(&config, check),
-        Command::FetchTestSuite { url } => fetch_test_suite::run(&config, url),
-        Command::Test {
-            language,
-            task,
-            test_cases,
-            verbose,
-        } => {
-            test::run(&config, language, task, test_cases, verbose);
-        }
-        Command::Submit { language, task } => todo!(),
-    }
-}
-
-fn setup_dao_with_fetching(config: &Config) -> Result<Dao, dao::Error> {
+fn setup_dao_with_fetching(config: &Config) -> Result<Dao, atcoder::Error> {
     let http_handler = HttpHandler::new(Agent::new());
     let csrf_token = Dao::fetch_csrf_token(&http_handler, &config.app_config.url.homepage)?;
     Ok(Dao::new(http_handler, csrf_token))

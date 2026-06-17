@@ -1,6 +1,6 @@
 use crate::{
-    domain::{html::Html, url::Url},
     dto::cookie::IntoCookieStore,
+    infra::atcoder::{html::Html, url::Url},
 };
 use cookie_store::Cookie;
 use ureq::Agent;
@@ -63,7 +63,7 @@ impl From<ureq::Error> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{domain::page_type, utils};
+    use crate::{infra::atcoder::page_type, utils};
 
     #[test]
     #[ignore]

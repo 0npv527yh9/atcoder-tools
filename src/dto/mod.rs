@@ -1,7 +1,7 @@
 pub mod config;
 pub mod cookie;
 
-use crate::domain::{page_type, url::Url};
+use crate::infra::atcoder::{page_type, url::Url};
 use ::time::OffsetDateTime;
 use cookie_store::Cookie;
 use serde::{Deserialize, Serialize};

@@ -1,16 +1,28 @@
-mod app;
 mod cli;
-mod dao;
-mod domain;
 mod dto;
 mod error;
-mod handler;
+mod infra;
+mod usecase;
 mod utils;
 
+use clap::Parser;
+use cli::{Cli, Command};
 use error::UnwrapOrExit;
-use handler::file_handler;
+use infra::file_handler;
 
 fn main() {
     let config = file_handler::load_config().unwrap_or_exit();
-    app::run(config);
+    match Cli::parse().command {
+        Command::Login { check } => usecase::login::run(&config, check),
+        Command::FetchTestSuite { url } => usecase::fetch_test_suite::run(&config, url),
+        Command::Test {
+            language,
+            task,
+            test_cases,
+            verbose,
+        } => {
+            usecase::test::run(&config, language, task, test_cases, verbose);
+        }
+        Command::Submit { language, task } => todo!(),
+    }
 }

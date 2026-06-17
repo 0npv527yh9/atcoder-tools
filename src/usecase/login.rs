@@ -1,11 +1,12 @@
+use super::save_dao;
 use super::{setup_dao_with_fetching, setup_dao_with_loading};
 use crate::{
-    app::save_dao,
-    dao::{self, Dao},
-    domain::{page_type, url::Url},
     dto::config::Config,
     error::UnwrapOrExit,
-    handler::{file_handler, terminal_handler},
+    infra::{
+        atcoder::{self, page_type, url::Url, Dao},
+        file_handler, terminal_handler,
+    },
 };
 
 pub fn run(config: &Config, check: bool) {
@@ -61,7 +62,7 @@ fn check_login(config: &Config, dao: Dao) -> Result<bool, Error> {
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Dao(#[from] dao::Error),
+    Dao(#[from] atcoder::Error),
 
     #[error("Terminal Input Error: {:?}", .0)]
     Terminal(#[source] std::io::Error),

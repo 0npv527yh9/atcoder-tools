@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-use crate::domain::{page_type, url};
 use crate::dto::Command;
+use crate::infra::atcoder::{page_type, url};
 use std::path::PathBuf;
 pub struct Config {
     pub app_config: AppConfig,

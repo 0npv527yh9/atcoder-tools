@@ -159,7 +159,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{handler::http_handler::HttpHandler, utils};
+    use crate::{infra::http_handler::HttpHandler, utils};
 
     #[test]
     #[ignore]

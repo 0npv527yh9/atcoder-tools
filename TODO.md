@@ -20,13 +20,11 @@
 
 ## P2: 依存方向を整理する
 
-- [ ] 12. `domain::path` から `handler::file_handler` 依存をなくす。
-- [ ] 13. `handler` という名前が実装詳細に寄りすぎているため、将来的に `infra` や `adapter` への整理を検討する。
 - [ ] 14. `dao` が HTTP と HTML parsing の両方を直接知っているため、責務を再確認する。
-- [ ] 15. `dto` に domain に近い型と設定用の型が混在しているため、必要になった時点で分割する。
+- [ ] 15. `dto` に設定・保存形式・usecase 内部モデルが混在しているため、`config` / `model` / `infra` 境界へ分解する。
 - [ ] 16. CLI 分岐とインスタンス生成を分け、必要なら application モジュールとして整理する。
 - [ ] 17. `http_handler::with_cookies` を外部 DI で置き換えられるか検討する。
-- [ ] 26. `main` / `cli` / `app` / `usecase` / `infra` の層分けが既存 TODO 13・16 と整合するか整理し、必要なモジュール境界だけを決める。
+- [ ] 27. `usecase::mod` に残っている DAO setup / session save helper を composition root または infra factory へ移し、usecase が依存の組み立てを持たない形にする。
 
 ## P3: 品質改善
 
@@ -42,3 +40,6 @@
 ## Done
 
 - [x] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
+- [x] 12. `domain::path` から `handler::file_handler` 依存をなくす。
+- [x] 13. `handler` という名前が実装詳細に寄りすぎているため、将来的に `infra` や `adapter` への整理を検討する。
+- [x] 26. `main` / `cli` / `app` / `usecase` / `infra` の層分けが既存 TODO 13・16 と整合するか整理し、必要なモジュール境界だけを決める。
