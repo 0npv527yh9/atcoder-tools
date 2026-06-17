@@ -1,7 +1,5 @@
-use super::save_dao;
 use crate::{
-    dto::{config::Config, SessionData, TaskInfo},
-    error::UnwrapOrExit,
+    dto::{config::Config, TaskInfo},
     infra::{
         atcoder::{
             self,
@@ -10,28 +8,11 @@ use crate::{
             Dao,
         },
         file_handler,
-        http_handler::HttpHandler,
     },
 };
 use itertools::Itertools;
 
-pub fn run(config: &Config, task_url: FetchTaskUrl) {
-    let dao = setup(config);
-    fetch(config, &dao, task_url).unwrap_or_exit();
-    save_dao(config, dao).unwrap_or_exit();
-}
-
-fn setup(config: &Config) -> Dao {
-    let SessionData {
-        cookies,
-        csrf_token,
-    } = file_handler::load(&config.app_config.path.session_data).unwrap_or_exit();
-
-    let http_handler = HttpHandler::with_cookies(cookies);
-    Dao::new(http_handler, csrf_token)
-}
-
-fn fetch(config: &Config, dao: &Dao, task_url: FetchTaskUrl) -> Result<(), Error> {
+pub fn run(config: &Config, dao: &Dao, task_url: FetchTaskUrl) -> Result<(), Error> {
     let test_suite = dao.fetch_test_suite(task_url.task_url())?;
     file_handler::save_test_suite(&config.app_config.path.test, &test_suite)?;
 
@@ -91,6 +72,7 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::infra::http_handler::HttpHandler;
     use ureq::Agent;
 
     #[test]

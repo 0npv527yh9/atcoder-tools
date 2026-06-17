@@ -1,34 +1,17 @@
-use super::save_dao;
-use super::{setup_dao_with_fetching, setup_dao_with_loading};
 use crate::{
     dto::config::Config,
-    error::UnwrapOrExit,
     infra::{
         atcoder::{self, page_type, url::Url, Dao},
-        file_handler, terminal_handler,
+        terminal_handler,
     },
 };
 
-pub fn run(config: &Config, check: bool) {
-    if check {
-        let dao = setup_dao_with_loading(config).unwrap_or_exit();
-        check_login(config, dao).unwrap_or_exit();
-    } else {
-        let dao = setup_dao_with_fetching(config).unwrap_or_exit();
-        login(config, dao).unwrap_or_exit();
-    }
-}
-
-fn login(config: &Config, dao: Dao) -> Result<(), Error> {
+pub fn login(config: &Config, dao: Dao) -> Result<Dao, Error> {
     interactive_login(&dao, &config.app_config.url.login)?;
 
     println!("Login Successful");
 
-    save_dao(config, dao)?;
-    let session_data_file = &config.app_config.path.session_data;
-    println!("{} Created", session_data_file.display());
-
-    Ok(())
+    Ok(dao)
 }
 
 fn interactive_login(dao: &Dao, url: &Url<page_type::Login>) -> Result<(), Error> {
@@ -43,20 +26,16 @@ fn interactive_login(dao: &Dao, url: &Url<page_type::Login>) -> Result<(), Error
     })
 }
 
-fn check_login(config: &Config, dao: Dao) -> Result<bool, Error> {
+pub fn check_login(config: &Config, dao: Dao) -> Result<(Dao, bool), Error> {
     let logged_in = dao.check_login(&config.app_config.url.homepage)?;
 
     if logged_in {
         println!("Logged in");
-
-        let session_data = dao.into_session_data();
-        file_handler::save(&config.app_config.path.session_data, &session_data)?;
-        println!("Expires: {:?}", session_data.expired_datetime());
     } else {
         println!("Not logged in");
     }
 
-    Ok(logged_in)
+    Ok((dao, logged_in))
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -66,7 +45,4 @@ pub enum Error {
 
     #[error("Terminal Input Error: {:?}", .0)]
     Terminal(#[source] std::io::Error),
-
-    #[error(transparent)]
-    FileHandler(#[from] file_handler::Error),
 }

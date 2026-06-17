@@ -24,7 +24,8 @@
 - [ ] 15. `dto` に設定・保存形式・usecase 内部モデルが混在しているため、`config` / `model` / `infra` 境界へ分解する。
 - [ ] 16. CLI 分岐とインスタンス生成を分け、必要なら application モジュールとして整理する。
 - [ ] 17. `http_handler::with_cookies` を外部 DI で置き換えられるか検討する。
-- [ ] 27. `usecase::mod` に残っている DAO setup / session save helper を composition root または infra factory へ移し、usecase が依存の組み立てを持たない形にする。
+- [ ] 28. ビルド影響範囲と責務境界を見直し、`infra::atcoder` や file system adapter を workspace crate として分離する必要があるか判断する。
+- [ ] 29. `runner` の DAO/session 組み立て helper 名を見直し、`setup` ではなく「何を元に何を作るか」が分かる名前にする。
 
 ## P3: 品質改善
 
@@ -43,3 +44,4 @@
 - [x] 12. `domain::path` から `handler::file_handler` 依存をなくす。
 - [x] 13. `handler` という名前が実装詳細に寄りすぎているため、将来的に `infra` や `adapter` への整理を検討する。
 - [x] 26. `main` / `cli` / `app` / `usecase` / `infra` の層分けが既存 TODO 13・16 と整合するか整理し、必要なモジュール境界だけを決める。
+- [x] 27. `usecase::mod` に残っている DAO setup / session save helper を composition root または infra factory へ移し、usecase が依存の組み立てを持たない形にする。
