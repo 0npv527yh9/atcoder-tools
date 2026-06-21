@@ -4,7 +4,7 @@ use crate::{
     error::UnwrapOrExit,
     infra::{
         atcoder::{self, Dao},
-        file_handler,
+        config_loader, file_handler,
         http_handler::HttpHandler,
     },
     usecase,
@@ -13,7 +13,7 @@ use clap::Parser;
 use ureq::Agent;
 
 pub(crate) fn run() {
-    let config = file_handler::load_config().unwrap_or_exit();
+    let config = config_loader::load_config().unwrap_or_exit();
 
     match Cli::parse().command {
         Command::Login { check } => {
