@@ -6,7 +6,6 @@
 
 - [ ] 2. ログイン時は保存済み CSRF token に頼らず、毎回新規取得する方針を明確にしてテストする。
 - [ ] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
-- [ ] 5. `config_loader::load_config` の `set_current_dir` を見直し、グローバルなカレントディレクトリ変更に依存しない構造にする。
 
 ## P1: テストしやすくする
 
@@ -26,6 +25,7 @@
 - [ ] 28. ビルド影響範囲と責務境界を見直し、`infra::atcoder` や file system adapter を workspace crate として分離する必要があるか判断する。
 - [ ] 29. `runner` の DAO/session 組み立て helper 名を見直し、`setup` ではなく「何を元に何を作るか」が分かる名前にする。
 - [ ] 30. usecase の戻り値から `Dao` を外し、session 保存 I/F を `SessionData` または意味のある結果型に整理する。
+- [ ] 31. `infra::atcoder::url::Url<PageType>` の生成を `From<String>` ではなく `TryFrom` / `FromStr` ベースにし、不正な URL を型として作れないようにする。
 
 ## P3: 品質改善
 
@@ -42,6 +42,7 @@
 
 - [x] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
 - [x] 4. `file_handler::load_config` の `panic!` を通常のエラーにする。
+- [x] 5. `config_loader::load_config` の `set_current_dir` を見直し、グローバルなカレントディレクトリ変更に依存しない構造にする。
 - [x] 12. `domain::path` から `handler::file_handler` 依存をなくす。
 - [x] 13. `handler` という名前が実装詳細に寄りすぎているため、将来的に `infra` や `adapter` への整理を検討する。
 - [x] 26. `main` / `cli` / `app` / `usecase` / `infra` の層分けが既存 TODO 13・16 と整合するか整理し、必要なモジュール境界だけを決める。

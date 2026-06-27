@@ -18,9 +18,7 @@ pub fn run<T: ReturnType>(
     command.args(args);
 
     // Working directory
-    if let Some(working_dir) = working_dir {
-        command.current_dir(working_dir);
-    }
+    command.current_dir(working_dir);
 
     // Stdin
     if input.is_some() {
@@ -83,14 +81,14 @@ impl ReturnType for process::ExitStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{path::PathBuf, str::FromStr};
+    use std::path::PathBuf;
 
     #[test]
     fn test_run() {
         let command = Command {
             command: "echo".to_string(),
             args: vec!["Hello, World!".to_string()],
-            working_dir: None,
+            working_dir: PathBuf::from("."),
         };
 
         let result = run::<process::Output>(&command, None);
@@ -103,7 +101,7 @@ mod tests {
         let command = Command {
             command: "ls".to_string(),
             args: vec![],
-            working_dir: Some(PathBuf::from_str("src").unwrap()),
+            working_dir: PathBuf::from("src"),
         };
 
         let result = run::<process::Output>(&command, None);

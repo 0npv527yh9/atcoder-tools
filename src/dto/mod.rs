@@ -52,7 +52,12 @@ pub struct TaskInfo {
 pub struct Command {
     pub command: String,
     pub args: Vec<String>,
-    pub working_dir: Option<PathBuf>,
+    #[serde(default = "default_working_dir")]
+    pub working_dir: PathBuf,
+}
+
+fn default_working_dir() -> PathBuf {
+    PathBuf::from(".")
 }
 
 pub struct Diff {

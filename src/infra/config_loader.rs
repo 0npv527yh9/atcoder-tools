@@ -8,30 +8,31 @@ use std::{
 };
 
 pub fn load_config() -> Result<Config, ConfigLoadError> {
+    let current_dir = env::current_dir().map_err(ConfigLoadError::CurrentDir)?;
+    load_config_from(&current_dir)
+}
+
+fn load_config_from(start: &Path) -> Result<Config, ConfigLoadError> {
     // Load config for app
     let app_config = load_app_config()?;
 
-    // Move to the root directory for app
-    let metadata_path =
-        find_required_in_ancestors(&app_config.path.metadata, ConfigLoadError::MetadataNotFound)?;
-    let root_path =
+    let metadata_path = find_required_in_ancestors_from(
+        start,
+        &app_config.path.metadata,
+        ConfigLoadError::MetadataNotFound,
+    )?;
+    let project_root =
         metadata_path
             .parent()
             .ok_or_else(|| ConfigLoadError::MetadataParentMissing {
                 path: metadata_path.clone(),
             })?;
-    env::set_current_dir(root_path).map_err(|source| ConfigLoadError::SetCurrentDir {
-        source,
-        path: root_path.to_path_buf(),
-    })?;
 
     // Load config for user
-    let user_config = file_handler::load_toml(&app_config.path.user_config)?;
+    let user_config_path = resolve_path(project_root, &app_config.path.user_config);
+    let user_config = file_handler::load_toml(&user_config_path)?;
 
-    Ok(Config {
-        app_config,
-        user_config,
-    })
+    Ok(Config::new(project_root, app_config, user_config))
 }
 
 fn load_app_config() -> Result<AppConfig, ConfigLoadError> {
@@ -47,14 +48,6 @@ fn load_app_config() -> Result<AppConfig, ConfigLoadError> {
     Ok(app_config)
 }
 
-fn find_required_in_ancestors(
-    target: &Path,
-    not_found: fn(PathBuf) -> ConfigLoadError,
-) -> Result<PathBuf, ConfigLoadError> {
-    find_in_ancestors(target)?.ok_or_else(|| not_found(target.to_path_buf()))
-}
-
-#[cfg(test)]
 fn find_required_in_ancestors_from(
     start: &Path,
     target: &Path,
@@ -63,16 +56,15 @@ fn find_required_in_ancestors_from(
     find_in_ancestors_from(start, target).ok_or_else(|| not_found(target.to_path_buf()))
 }
 
-fn find_in_ancestors(target: &Path) -> Result<Option<PathBuf>, ConfigLoadError> {
-    let current_dir = env::current_dir().map_err(ConfigLoadError::CurrentDir)?;
-    Ok(find_in_ancestors_from(&current_dir, target))
-}
-
 fn find_in_ancestors_from(start: &Path, target: &Path) -> Option<PathBuf> {
     start
         .ancestors()
         .map(|path| path.join(target))
         .find(|path| path.is_dir())
+}
+
+fn resolve_path(project_root: &Path, path: &Path) -> PathBuf {
+    project_root.join(path)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -91,13 +83,6 @@ pub enum ConfigLoadError {
 
     #[error("Failed to get current directory")]
     CurrentDir(#[source] std::io::Error),
-
-    #[error("{source}: {path}")]
-    SetCurrentDir {
-        #[source]
-        source: std::io::Error,
-        path: PathBuf,
-    },
 }
 
 #[cfg(test)]
@@ -105,6 +90,24 @@ mod tests {
     use super::*;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn test_load_config_from_does_not_change_current_dir() {
+        let original_current_dir = env::current_dir().unwrap();
+        let root = unique_temp_dir("atcoder-tools-config-loader-load-from");
+        let metadata = root.join(".atcoder");
+        let nested = root.join("a").join("b");
+        fs::create_dir_all(&metadata).unwrap();
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(metadata.join("config.toml"), "language = []").unwrap();
+
+        let config = load_config_from(&nested).unwrap();
+
+        assert_eq!(root.join(".atcoder"), config.app_config.path.metadata);
+        assert_eq!(original_current_dir, env::current_dir().unwrap());
+
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn test_find_in_ancestors_from_found() {

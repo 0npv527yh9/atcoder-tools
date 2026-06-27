@@ -32,7 +32,7 @@ fn setup(config: &Config, language: String) -> Result<(&LanguageConfig, &Path), 
         .user_config
         .language_config(&language)
         .ok_or(Error::Config(language))?;
-    let test_dir = &config.app_config.path.test;
+    let test_dir = config.app_config.path.test.as_path();
 
     Ok((language_config, test_dir))
 }
