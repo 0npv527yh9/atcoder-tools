@@ -5,16 +5,16 @@
 ## P0: すぐ直したい
 
 - [ ] 2. ログイン時は保存済み CSRF token に頼らず、毎回新規取得する方針を明確にしてテストする。
-- [ ] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
 
 ## P1: テストしやすくする
 
-- [ ] 6. `app::fetch_test_suite` から IO・表示・ユースケースロジックを分離する。
-- [ ] 7. `app::login` から端末入力・表示・ログイン判定・保存処理を分離する。
-- [ ] 8. ignored な実 HTTP テストとは別に、fake/mock ベースの app テストを追加する。
-- [ ] 9. service / app / cli の境界ごとに単体テストを追加する。
+- [ ] 6. `usecase::fetch_test_suite` から IO・CLI 出力・ユースケースロジックを分離する。
+- [ ] 7. `usecase::login` から端末入力・CLI 出力・ログイン判定・保存処理を分離する。
+- [ ] 8. ignored な実 HTTP テストとは別に、fake/mock ベースの usecase / runner テストを追加する。
+- [ ] 9. usecase / runner / cli の境界ごとに単体テストを追加する。
 - [ ] 10. `command_handler` の実プロセス起動に依存しないテスト境界を作る。
 - [ ] 11. `terminal_handler::print_diffs` と diff 生成を分け、端末サイズ取得なしでテストできる範囲を増やす。
+- [ ] 32. `usecase::test` から `AC` 表示などの CLI 出力を分離し、テスト結果を runner 側で表示できる形にする。
 
 ## P2: 依存方向を整理する
 
@@ -26,6 +26,11 @@
 - [ ] 29. `runner` の DAO/session 組み立て helper 名を見直し、`setup` ではなく「何を元に何を作るか」が分かる名前にする。
 - [ ] 30. usecase の戻り値から `Dao` を外し、session 保存 I/F を `SessionData` または意味のある結果型に整理する。
 - [ ] 31. `infra::atcoder::url::Url<PageType>` の生成を `From<String>` ではなく `TryFrom` / `FromStr` ベースにし、不正な URL を型として作れないようにする。
+- [ ] 33. `cli` が `infra::atcoder::url::FetchTaskUrl` に直接依存しているため、fetch-test の CLI 引数と usecase 入力モデルの境界を整理する。
+  - `cli` は URL 文字列を受け取るだけにし、AtCoder URL の解析・派生 URL 構築には直接依存しない。
+  - `usecase::fetch_test_suite` には `Contest` / `Task` のような fetch-test 用の入力モデルを置く。
+  - `infra::atcoder` には AtCoder website の URL 構造、`/tasks_print` や `/tasks` の派生 URL、`task_screen_name` 解析などを残す。
+  - `FetchTaskUrl` 相当の責務は「usecase の対象種別」と「AtCoder website adapter の URL 知識」に分ける。
 
 ## P3: 品質改善
 
@@ -41,6 +46,7 @@
 ## Done
 
 - [x] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
+- [x] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
 - [x] 4. `file_handler::load_config` の `panic!` を通常のエラーにする。
 - [x] 5. `config_loader::load_config` の `set_current_dir` を見直し、グローバルなカレントディレクトリ変更に依存しない構造にする。
 - [x] 12. `domain::path` から `handler::file_handler` 依存をなくす。

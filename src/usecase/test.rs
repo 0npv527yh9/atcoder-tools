@@ -3,12 +3,11 @@ use crate::{
         config::{Config, LanguageConfig},
         Command, Diff, TestCase, TestCaseFile,
     },
-    error::UnwrapOrExit,
     infra::{command_handler, file_handler, terminal_handler},
 };
 use std::{
     path::Path,
-    process::{self, ExitStatus, Output},
+    process::{ExitStatus, Output},
 };
 
 pub fn run(
@@ -17,14 +16,13 @@ pub fn run(
     task: String,
     test_cases: Option<Vec<String>>,
     verbose: bool,
-) {
-    let (language_config, test_dir) = setup(config, language).unwrap_or_exit();
-    let ac = test(language_config, test_dir, task, test_cases, verbose).unwrap_or_exit();
+) -> Result<bool, Error> {
+    let (language_config, test_dir) = setup(config, language)?;
+    let ac = test(language_config, test_dir, task, test_cases, verbose)?;
     if ac {
         println!("AC");
-    } else {
-        process::exit(1);
     }
+    Ok(ac)
 }
 
 fn setup(config: &Config, language: String) -> Result<(&LanguageConfig, &Path), Error> {
