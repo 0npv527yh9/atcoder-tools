@@ -9,6 +9,3 @@ pub struct Task;
 
 #[derive(Clone)]
 pub struct Tasks;
-
-#[derive(Clone)]
-pub struct Login;

@@ -1,10 +1,7 @@
 use serde::Deserialize;
 
 use crate::dto::Command;
-use crate::infra::atcoder::{
-    page_type::{Home, Login},
-    url::Url,
-};
+use crate::infra::atcoder::{page_type::Home, url::Url};
 use std::path::{Path, PathBuf};
 pub struct Config {
     pub app_config: AppConfig,
@@ -61,7 +58,6 @@ impl PathConfig {
 #[derive(Deserialize)]
 pub struct UrlConfig {
     pub homepage: Url<Home>,
-    pub login: Url<Login>,
 }
 
 #[derive(Deserialize)]
@@ -142,7 +138,6 @@ mod tests {
                 },
                 url: UrlConfig {
                     homepage: "https://atcoder.jp/home".to_string().into(),
-                    login: "https://atcoder.jp/login".to_string().into(),
                 },
             },
             UserConfig { language: vec![] },

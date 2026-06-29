@@ -6,8 +6,8 @@ AtCoder 用の CLI ツールです。Rust で実装しています。
 
 ## 現在使える機能
 
-- `login`: AtCoder にログインし、セッション情報を保存する。
-- `login --check`: 保存済みセッションでログイン状態を確認する。
+- `cookie import`: ブラウザからコピーした AtCoder の Request Cookie ヘッダーを保存する。
+- `cookie check`: 保存済み cookie でログイン状態を確認する。
 - `fetch-test` / `f`: コンテストページまたはタスクページからサンプルテストを取得する。
 - `test` / `t`: 設定済みコマンドでローカル実行し、サンプル出力と比較する。
 
@@ -45,16 +45,16 @@ working_dir = "."
 
 ## 基本的な使い方
 
-ログインします。
+ブラウザで AtCoder にログインしたあと、DevTools などから Request Cookie ヘッダーをコピーして取り込みます。
 
 ```sh
-cargo run -- login
+cargo run -- cookie import
 ```
 
-ログイン状態を確認します。
+保存済み cookie でログイン状態を確認します。
 
 ```sh
-cargo run -- login --check
+cargo run -- cookie check
 ```
 
 コンテストページから全タスクのサンプルを取得します。
@@ -98,7 +98,8 @@ cargo run -- test rust A --verbose
 
 ## 設計メモ
 
-- ログイン時は、保存済みセッションがあっても CSRF token を新規取得する方針です。token の期限切れや AtCoder 側の状態変化でログインできなくなる可能性があるためです。
+- CLI から username/password で AtCoder へログインする処理は持ちません。ブラウザでログイン済みの cookie を `cookie import` で取り込み、保存済み cookie の確認は `cookie check` で行います。
+- CSRF token は cookie 由来の session 情報として保存します。`cookie import` は AtCoder へ GET/POST せず、login のために fresh token を取得しません。
 - `Url<PageType>` や `Html<PageType>` のような phantom marker type による型安全性は、このツールの重要な設計要素として残します。
 - 開発初期は実装速度を優先してもよいですが、エラーは最終的に CLI 利用者が判断しやすい enum 型へ寄せます。
 

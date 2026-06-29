@@ -1,5 +1,5 @@
 use crate::{
-    cli::{Cli, Command},
+    cli::{Cli, Command, CookieCommand},
     dto::{config::Config, SessionData},
     infra::{
         atcoder::{self, Dao},
@@ -9,33 +9,37 @@ use crate::{
     },
     usecase, RunOutcome,
 };
-use ureq::Agent;
 
 pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
     let config = config_loader::load_config()?;
 
     match cli.command {
-        Command::Login { check } => {
-            if check {
-                let dao = setup_dao_with_loading(&config)?;
-                let (dao, logged_in) = usecase::login::check_login(&config, dao)?;
+        Command::Cookie { command } => {
+            match command {
+                CookieCommand::Import => {
+                    let session_data = usecase::cookie::import(&config)?;
+                    save_session_data(&config, &session_data)?;
 
-                if logged_in {
-                    let session_data = save_dao(&config, dao)?;
-                    println!("Expires: {:?}", session_data.expired_datetime());
+                    let session_data_file = &config.app_config.path.session_data;
+                    println!("{} Created", session_data_file.display());
+                    println!("Run `cookie check` to verify the saved cookies.");
                 }
-            } else {
-                let dao = setup_dao_with_fetching(&config)?;
-                let dao = usecase::login::login(&config, dao)?;
-                save_dao(&config, dao)?;
+                CookieCommand::Check => {
+                    let session_data = load_session_data(&config)?;
+                    let dao = session_data_to_dao(session_data);
+                    let logged_in = usecase::cookie::check(&config, &dao)?;
 
-                let session_data_file = &config.app_config.path.session_data;
-                println!("{} Created", session_data_file.display());
+                    if logged_in {
+                        let session_data = save_dao(&config, dao)?;
+                        println!("Expires: {:?}", session_data.expired_datetime());
+                    }
+                }
             }
             Ok(RunOutcome::Success)
         }
         Command::FetchTestSuite { url } => {
-            let dao = setup_dao_with_loading(&config)?;
+            let session_data = load_session_data(&config)?;
+            let dao = session_data_to_dao(session_data);
             usecase::fetch_test_suite::run(&config, &dao, url)?;
             save_dao(&config, dao)?;
             Ok(RunOutcome::Success)
@@ -56,26 +60,27 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
     }
 }
 
-fn setup_dao_with_fetching(config: &Config) -> Result<Dao, atcoder::Error> {
-    let http_handler = HttpHandler::new(Agent::new());
-    let csrf_token = Dao::fetch_csrf_token(&http_handler, &config.app_config.url.homepage)?;
-    Ok(Dao::new(http_handler, csrf_token))
+fn load_session_data(config: &Config) -> Result<SessionData, file_handler::Error> {
+    file_handler::load(&config.app_config.path.session_data)
 }
 
-fn setup_dao_with_loading(config: &Config) -> Result<Dao, file_handler::Error> {
-    let SessionData {
-        cookies,
-        csrf_token,
-    } = file_handler::load(&config.app_config.path.session_data)?;
-
-    let http_handler = HttpHandler::with_cookies(cookies);
-    Ok(Dao::new(http_handler, csrf_token))
+fn session_data_to_dao(session_data: SessionData) -> Dao {
+    let csrf_token = session_data.csrf_token;
+    let http_handler = HttpHandler::with_cookies(session_data.cookies);
+    Dao::new(http_handler, csrf_token)
 }
 
 fn save_dao(config: &Config, dao: Dao) -> Result<SessionData, file_handler::Error> {
     let session_data = dao.into_session_data();
-    file_handler::save(&config.app_config.path.session_data, &session_data)?;
+    save_session_data(config, &session_data)?;
     Ok(session_data)
+}
+
+fn save_session_data(
+    config: &Config,
+    session_data: &SessionData,
+) -> Result<(), file_handler::Error> {
+    file_handler::save(&config.app_config.path.session_data, session_data)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -90,7 +95,7 @@ pub(crate) enum Error {
     File(#[from] file_handler::Error),
 
     #[error(transparent)]
-    Login(#[from] usecase::login::Error),
+    Cookie(#[from] usecase::cookie::Error),
 
     #[error(transparent)]
     FetchTestSuite(#[from] usecase::fetch_test_suite::Error),

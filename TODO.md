@@ -2,14 +2,10 @@
 
 このファイルはリファクタリング作業リストです。未完了の作業は `- [ ]` で残し、完了した作業は `Done` セクションへ移動します。優先度の高い順に並べています。
 
-## P0: すぐ直したい
-
-- [ ] 2. ログイン時は保存済み CSRF token に頼らず、毎回新規取得する方針を明確にしてテストする。
-
 ## P1: テストしやすくする
 
 - [ ] 6. `usecase::fetch_test_suite` から IO・CLI 出力・ユースケースロジックを分離する。
-- [ ] 7. `usecase::login` から端末入力・CLI 出力・ログイン判定・保存処理を分離する。
+- [ ] 7. `usecase::cookie` から端末入力・CLI 出力・ログイン判定・保存処理を分離する。
 - [ ] 8. ignored な実 HTTP テストとは別に、fake/mock ベースの usecase / runner テストを追加する。
 - [ ] 9. usecase / runner / cli の境界ごとに単体テストを追加する。
 - [ ] 10. `command_handler` の実プロセス起動に依存しないテスト境界を作る。
@@ -46,6 +42,7 @@
 ## Done
 
 - [x] 1. `login` の `file_handler::save` 結果を捨てている箇所を修正する。
+- [x] 2. login POST を廃止し、保存済み CSRF token に依存しない cookie import / check へ整理する。
 - [x] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
 - [x] 4. `file_handler::load_config` の `panic!` を通常のエラーにする。
 - [x] 5. `config_loader::load_config` の `set_current_dir` を見直し、グローバルなカレントディレクトリ変更に依存しない構造にする。

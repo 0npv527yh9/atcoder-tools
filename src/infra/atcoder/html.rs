@@ -23,20 +23,14 @@ impl<PageType> Deref for Html<PageType> {
 }
 
 impl Html<page_type::Home> {
-    pub fn csrf_token(&self) -> Option<String> {
-        self.select_one("[name=csrf_token]")
-            .and_then(|element| element.attr("value"))
-            .map(Into::into)
-    }
-
-    pub fn title(&self) -> Option<String> {
-        self.select_one("title").map(|element| element.inner_html())
-    }
-
-    pub fn has_sign_up_button(&self) -> bool {
+    fn has_sign_up_button(&self) -> bool {
         self.select_one("#navbar-collapse > .navbar-right > li:nth-child(2) > a")
             .map(|element| element.inner_html())
-            .map_or(false, |name| name == "Sign Up")
+            .is_some_and(|name| name == "Sign Up")
+    }
+
+    pub fn is_logged_in(&self) -> bool {
+        !self.has_sign_up_button()
     }
 }
 
@@ -160,34 +154,6 @@ where
 mod tests {
     use super::*;
     use crate::{infra::http_handler::HttpHandler, utils};
-
-    #[test]
-    #[ignore]
-    fn test_csrf_token() {
-        // Setup
-        let html = utils::test::load_homepage_html();
-
-        let expected = rpassword::prompt_password("CSRF Token").unwrap();
-
-        // Run
-        let actual = html.csrf_token().expect("CSRF Token Not Found");
-
-        // Verify
-        assert_eq!(expected, actual);
-    }
-
-    #[test]
-    fn test_title() {
-        // Setup
-        let html = utils::test::load_homepage_html();
-        let expected = "AtCoder";
-
-        // Run
-        let actual = html.title().expect("ERROR: <title> Not Found");
-
-        // Verify
-        assert_eq!(expected, actual);
-    }
 
     #[test]
     fn test_parse_task_tags() {

@@ -9,11 +9,10 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// Login
-    Login {
-        /// Check login status
-        #[arg(short, long)]
-        check: bool,
+    /// Import or check AtCoder cookies
+    Cookie {
+        #[clap(subcommand)]
+        command: CookieCommand,
     },
 
     /// Fetch test suite
@@ -47,6 +46,15 @@ pub enum Command {
     /// Submit
     #[command(visible_alias = "s")]
     Submit { language: String, task: String },
+}
+
+#[derive(Subcommand)]
+pub enum CookieCommand {
+    /// Import a browser Request Cookie header
+    Import,
+
+    /// Check saved cookie login status
+    Check,
 }
 
 fn append_txt_extension(s: &str) -> Result<String, String> {

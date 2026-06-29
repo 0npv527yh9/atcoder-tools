@@ -86,6 +86,7 @@ dependencies = [
  "clap",
  "cookie_store",
  "itertools",
+ "percent-encoding",
  "regex",
  "rpassword",
  "rprompt",

@@ -1,16 +1,11 @@
 pub mod html;
 pub mod page_type;
 pub mod url;
-
 use self::url::Url;
 use crate::{
     dto::{SessionData, TestSuite},
-    infra::{
-        http_handler::{self, HttpHandler},
-        terminal_handler::Credentials,
-    },
+    infra::http_handler::{self, HttpHandler},
 };
-use dto::LoginData;
 
 pub struct Dao {
     http_handler: HttpHandler,
@@ -22,36 +17,6 @@ impl Dao {
         Self {
             http_handler,
             csrf_token,
-        }
-    }
-
-    pub fn fetch_csrf_token(
-        http_handler: &HttpHandler,
-        url: &Url<page_type::Home>,
-    ) -> Result<String, Error> {
-        let html = http_handler.get(url)?;
-        html.csrf_token().ok_or(Error::CsrfTokenNotFound)
-    }
-
-    pub fn login(
-        &self,
-        Credentials { username, password }: Credentials,
-        url: &Url<page_type::Login>,
-    ) -> Result<(), Error> {
-        let login_data = LoginData {
-            username: &username,
-            password: &password,
-            csrf_token: &self.csrf_token,
-        };
-
-        let html = self
-            .http_handler
-            .post::<_, page_type::Home>(url, login_data)?;
-
-        match html.title() {
-            Some(title) if title == "AtCoder" => Ok(()),
-            Some(_) => Err(Error::LoginFailed),
-            None => Err(Error::Others("<title> Not Found".to_string())),
         }
     }
 
@@ -77,76 +42,20 @@ impl Dao {
 
     pub fn check_login(&self, url: &Url<page_type::Home>) -> Result<bool, Error> {
         let html = self.http_handler.get(url)?;
-        Ok(!html.has_sign_up_button())
-    }
-}
-
-pub mod dto {
-    use serde::Serialize;
-
-    #[derive(Serialize)]
-    pub(super) struct LoginData<'a> {
-        pub username: &'a str,
-        pub password: &'a str,
-        pub csrf_token: &'a str,
-    }
-
-    impl<'a> From<LoginData<'a>> for Vec<(&str, &'a str)> {
-        fn from(
-            LoginData {
-                username,
-                password,
-                csrf_token,
-            }: LoginData<'a>,
-        ) -> Self {
-            vec![
-                ("username", username),
-                ("password", password),
-                ("csrf_token", csrf_token),
-            ]
-        }
+        Ok(html.is_logged_in())
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("CSRF Token Not Found")]
-    CsrfTokenNotFound,
-
     #[error(transparent)]
     HttpHandler(#[from] http_handler::Error),
-
-    #[error("Login Failed")]
-    LoginFailed,
-
-    #[error("{}", .0)]
-    Others(String),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use ureq::Agent;
-
-    #[test]
-    #[ignore]
-    fn test_login() {
-        // Setup
-        let http_handler = HttpHandler::new(Agent::new());
-        let url = "https://atcoder.jp/login".to_string().into();
-        let csrf_token = Dao::fetch_csrf_token(&http_handler, &url).unwrap();
-        let dao = Dao::new(http_handler, csrf_token);
-
-        let username = rprompt::prompt_reply("username:").unwrap();
-        let password = rpassword::prompt_password("password:").unwrap();
-
-        // Run
-        let url = "https:://atcoder.jp/login".to_string().into();
-        let response = dao.login(Credentials { username, password }, &url);
-
-        // Verify
-        assert!(response.is_ok())
-    }
 
     #[test]
     #[ignore]
