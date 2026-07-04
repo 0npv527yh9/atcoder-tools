@@ -1,9 +1,9 @@
-use crate::{
-    dto::cookie::IntoCookieStore,
-    infra::atcoder::{html::Html, url::Url},
-};
+use crate::infra::atcoder::{html::Html, url::Url};
 use cookie_store::Cookie;
-use ureq::Agent;
+use std::str::FromStr;
+use ureq::{http::Uri, Agent};
+
+const ATCODER_ORIGIN: &str = "https://atcoder.jp/";
 
 pub struct HttpHandler {
     agent: Agent,
@@ -15,14 +15,23 @@ impl HttpHandler {
     }
 
     pub fn with_cookies(cookies: Vec<Cookie<'static>>) -> Self {
-        let cookie_store = cookies.into_cookie_store();
-        let agent = ureq::builder().cookie_store(cookie_store).build();
+        let agent = Agent::new_with_defaults();
+        let uri = atcoder_origin_uri();
+        {
+            let mut jar = agent.cookie_jar_lock();
+            for cookie in cookies {
+                if let Ok(cookie) = ureq::Cookie::parse(cookie.to_string(), &uri) {
+                    let _ = jar.insert(cookie, &uri);
+                }
+            }
+        }
+
         Self { agent }
     }
 
     pub fn get<PageType>(&self, url: &Url<PageType>) -> Result<Html<PageType>, Error> {
-        let response = self.agent.get(url).call()?;
-        let html = response.into_string()?.replace("\r", "");
+        let mut response = self.agent.get(url.as_str()).call()?;
+        let html = response.body_mut().read_to_string()?.replace("\r", "");
         Ok(html.into())
     }
 
@@ -31,18 +40,37 @@ impl HttpHandler {
         url: &Url<RequestPageType>,
         data: impl Into<Vec<(&'static str, &'a str)>>,
     ) -> Result<Html<ResponsePageType>, Error> {
-        let response = self.agent.post(url).send_form(&data.into())?;
-        let html = response.into_string()?.replace("\r", "").into();
+        let mut response = self.agent.post(url.as_str()).send_form(data.into())?;
+        let html = response
+            .body_mut()
+            .read_to_string()?
+            .replace("\r", "")
+            .into();
         Ok(html)
     }
 
     pub fn into_cookies(self) -> Vec<Cookie<'static>> {
+        let request_url = ::url::Url::parse(ATCODER_ORIGIN).unwrap();
+
         self.agent
-            .cookie_store()
-            .iter_unexpired()
-            .cloned()
+            .cookie_jar_lock()
+            .iter()
+            .filter_map(|cookie| {
+                Some(
+                    Cookie::parse(
+                        format!("{}={}", cookie.name(), cookie.value()),
+                        &request_url,
+                    )
+                    .ok()?
+                    .into_owned(),
+                )
+            })
             .collect()
     }
+}
+
+fn atcoder_origin_uri() -> Uri {
+    Uri::from_str(ATCODER_ORIGIN).unwrap()
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -66,6 +94,31 @@ mod tests {
     use crate::{infra::atcoder::page_type, utils};
 
     #[test]
+    fn with_cookies_round_trips_cookie_names_and_values() {
+        let request_url = ::url::Url::parse(ATCODER_ORIGIN).unwrap();
+        let cookies = vec![
+            Cookie::parse(
+                "REVEL_SESSION=session-value; Path=/; HttpOnly; Secure",
+                &request_url,
+            )
+            .unwrap()
+            .into_owned(),
+            Cookie::parse("csrf_token=csrf-value; Path=/", &request_url)
+                .unwrap()
+                .into_owned(),
+        ];
+
+        let round_tripped = HttpHandler::with_cookies(cookies).into_cookies();
+
+        assert!(round_tripped.iter().any(|cookie| {
+            cookie.name() == "REVEL_SESSION" && cookie.value() == "session-value"
+        }));
+        assert!(round_tripped
+            .iter()
+            .any(|cookie| cookie.name() == "csrf_token" && cookie.value() == "csrf-value"));
+    }
+
+    #[test]
     #[ignore]
     fn test_get() {
         // Setup
@@ -73,7 +126,7 @@ mod tests {
         let expected = expected.split('\n').collect::<Vec<_>>();
 
         let http_handler = HttpHandler {
-            agent: Agent::new(),
+            agent: Agent::new_with_defaults(),
         };
 
         // Run

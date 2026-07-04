@@ -20,5 +20,5 @@ terminal_size = "0.4.2"
 thiserror = "2.0.11"
 time = "0.3.41"
 toml = "0.8.19"
-ureq = { version = "2.10.1", features = ["json", "cookies"] }
+ureq = { version = "3.3.0", features = ["json", "cookies"] }
 url = "2.5.2"

@@ -54,11 +54,11 @@ fn load_html<PageType>(file: &str, url: &str) -> Html<PageType> {
 fn fetch_html(url: &str) -> Result<String, Error> {
     println!("Fetching {url}");
 
-    Agent::new()
+    Agent::new_with_defaults()
         .get(url)
         .call()
         .map_err(|_| Error::FetchFailed(url.to_string()))
-        .and_then(|response| match response.into_string() {
+        .and_then(|mut response| match response.body_mut().read_to_string() {
             Ok(html) => Ok(html.replace("\r", "")),
             Err(_) => Err(Error::InvalidHtml(url.to_string())),
         })
@@ -95,7 +95,7 @@ pub fn load_session_data() -> SessionData {
 }
 
 fn fetch_session_data(url: &str) -> Result<SessionData, Error> {
-    let agent = Agent::new();
+    let agent = Agent::new_with_defaults();
 
     println!("Fetching {url}");
 
@@ -104,7 +104,21 @@ fn fetch_session_data(url: &str) -> Result<SessionData, Error> {
         .call()
         .map_err(|_| Error::FetchFailed(url.to_string()))?;
 
-    let cookies = agent.cookie_store().iter_unexpired().cloned().collect();
+    let request_url = ::url::Url::parse(url).unwrap();
+    let cookies = agent
+        .cookie_jar_lock()
+        .iter()
+        .filter_map(|cookie| {
+            Some(
+                cookie_store::Cookie::parse(
+                    format!("{}={}", cookie.name(), cookie.value()),
+                    &request_url,
+                )
+                .ok()?
+                .into_owned(),
+            )
+        })
+        .collect();
     Ok(SessionData {
         cookies,
         csrf_token: "Dummy CSRF Token".to_string(),

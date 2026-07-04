@@ -79,7 +79,7 @@ mod tests {
     #[ignore]
     fn test_fetch_task_screen_names() {
         // Setup
-        let http_handler = HttpHandler::new(Agent::new());
+        let http_handler = HttpHandler::new(Agent::new_with_defaults());
         let dao = Dao::new(http_handler, "Dummy CSRF Token".to_string());
 
         let task_url = "https://atcoder.jp/contests/abc388".parse().unwrap();

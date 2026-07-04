@@ -18,11 +18,16 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
             match command {
                 CookieCommand::Import => {
                     let session_data = usecase::cookie::import(&config)?;
-                    save_session_data(&config, &session_data)?;
+                    let dao = session_data_to_dao(session_data);
+                    let logged_in = usecase::cookie::check(&config, &dao)?;
 
-                    let session_data_file = &config.app_config.path.session_data;
-                    println!("{} Created", session_data_file.display());
-                    println!("Run `cookie check` to verify the saved cookies.");
+                    if !logged_in {
+                        return Err(usecase::cookie::Error::ImportedCookieNotLoggedIn.into());
+                    }
+
+                    let session_data = save_dao(&config, dao)?;
+                    println!("{} Created", config.app_config.path.session_data.display());
+                    println!("Expires: {:?}", session_data.expired_datetime());
                 }
                 CookieCommand::Check => {
                     let session_data = load_session_data(&config)?;

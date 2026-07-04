@@ -61,7 +61,7 @@ mod tests {
     #[ignore]
     fn test_fetch_test_suite_task_page() {
         // Setup
-        let http_handler = HttpHandler::new(Agent::new());
+        let http_handler = HttpHandler::new(Agent::new_with_defaults());
         let task_url = "https://atcoder.jp/contests/abc388/tasks/abc388_a"
             .to_string()
             .into();
@@ -80,7 +80,7 @@ mod tests {
     #[ignore]
     fn test_fetch_test_suite_tasks_print() {
         // Setup
-        let http_handler = HttpHandler::new(Agent::new());
+        let http_handler = HttpHandler::new(Agent::new_with_defaults());
         let tasks_print_url = "https://atcoder.jp/contests/abc388/tasks_print"
             .to_string()
             .into();
@@ -98,7 +98,7 @@ mod tests {
     #[ignore]
     fn test_fetch_task_screen_names() {
         // Setup
-        let http_handler = HttpHandler::new(Agent::new());
+        let http_handler = HttpHandler::new(Agent::new_with_defaults());
         let tasks_url = "https://atcoder.jp/contests/abc388/tasks"
             .to_string()
             .into();

@@ -39,6 +39,9 @@ pub enum Error {
     #[error("CSRF Token Not Found")]
     CsrfTokenNotFound,
 
+    #[error("Imported cookies are not logged in")]
+    ImportedCookieNotLoggedIn,
+
     #[error(transparent)]
     Dao(#[from] atcoder::Error),
 

@@ -1,42 +1,22 @@
 use cookie_store::{Cookie, CookieStore};
 use percent_encoding::percent_decode_str;
 
-pub trait IntoCookieStore {
-    fn into_cookie_store(self) -> CookieStore;
-}
-
-impl IntoCookieStore for Vec<Cookie<'static>> {
-    fn into_cookie_store(self) -> CookieStore {
-        let cookies = self.into_iter().map(Ok::<_, ()>);
-        CookieStore::from_cookies(cookies, false).unwrap()
-    }
-}
-
 pub fn parse_request_cookie_header(
     header: &str,
     request_url: &str,
 ) -> Result<Vec<Cookie<'static>>, Error> {
     let request_url = ::url::Url::parse(request_url).map_err(|_| Error::InvalidRequestUrl)?;
     let mut cookie_store = CookieStore::new(None);
-    let mut parsed_count = 0;
 
-    for cookie in header
-        .split(';')
-        .map(str::trim)
-        .filter(|cookie| !cookie.is_empty())
-    {
-        if !is_request_cookie_pair(cookie) {
-            return Err(Error::InvalidCookie(cookie.to_string()));
-        }
-
+    for cookie in request_cookie_pairs(header) {
+        let cookie = cookie?;
         cookie_store
             .parse(cookie, &request_url)
             .map_err(|_| Error::InvalidCookie(cookie.to_string()))?;
-        parsed_count += 1;
     }
 
     let cookies = cookie_store.iter_unexpired().cloned().collect::<Vec<_>>();
-    if parsed_count == 0 || cookies.is_empty() {
+    if cookies.is_empty() {
         return Err(Error::NoCookies);
     }
 
@@ -44,29 +24,46 @@ pub fn parse_request_cookie_header(
 }
 
 pub fn extract_csrf_token(cookies: &[Cookie<'static>]) -> Option<String> {
+    extract_csrf_cookie_token(cookies).or_else(|| extract_revel_session_cookie_token(cookies))
+}
+
+fn request_cookie_pairs(header: &str) -> impl Iterator<Item = Result<&str, Error>> {
+    header
+        .split(';')
+        .map(str::trim)
+        .filter(|cookie| !cookie.is_empty())
+        .map(validate_request_cookie_pair)
+}
+
+fn validate_request_cookie_pair(cookie: &str) -> Result<&str, Error> {
+    let Some((name, value)) = cookie.split_once('=') else {
+        return Err(Error::InvalidCookie(cookie.to_string()));
+    };
+
+    if name.trim().is_empty() || value.trim().is_empty() {
+        return Err(Error::InvalidCookie(cookie.to_string()));
+    }
+
+    Ok(cookie)
+}
+
+fn extract_csrf_cookie_token(cookies: &[Cookie<'static>]) -> Option<String> {
     cookies
         .iter()
         .find(|cookie| cookie.name() == "csrf_token")
         .map(|cookie| cookie.value().to_string())
-        .or_else(|| {
-            cookies
-                .iter()
-                .find(|cookie| cookie.name() == "REVEL_SESSION")
-                .and_then(|cookie| extract_revel_session_csrf_token(cookie.value()))
-        })
 }
 
-fn is_request_cookie_pair(cookie: &str) -> bool {
-    let Some((name, value)) = cookie.split_once('=') else {
-        return false;
-    };
-
-    !name.trim().is_empty() && !value.trim().is_empty()
+fn extract_revel_session_cookie_token(cookies: &[Cookie<'static>]) -> Option<String> {
+    cookies
+        .iter()
+        .find(|cookie| cookie.name() == "REVEL_SESSION")
+        .and_then(|cookie| extract_revel_session_csrf_token(cookie.value()))
 }
 
 fn extract_revel_session_csrf_token(value: &str) -> Option<String> {
     let decoded = percent_decode_str(value).decode_utf8().ok()?;
-    let token = decoded.split("csrf_token:").nth(1)?;
+    let (_, token) = decoded.split_once("csrf_token:")?;
     let token = token.split(['\0', '\n', '\r', '\t', ' ']).next()?;
 
     if token.is_empty() {
@@ -91,27 +88,6 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
-
-    trait IntoCookies {
-        fn into_cookies(self) -> Vec<Cookie<'static>>;
-    }
-
-    impl IntoCookies for CookieStore {
-        fn into_cookies(self) -> Vec<Cookie<'static>> {
-            self.iter_unexpired().cloned().collect()
-        }
-    }
-
-    #[test]
-    fn test_into_cookie_store() {
-        let session_data = utils::test::load_session_data();
-
-        let cookies_store = session_data.cookies.clone().into_cookie_store();
-        let cookies = cookies_store.into_cookies();
-
-        assert_eq!(session_data.cookies, cookies);
-    }
 
     #[test]
     fn parse_request_cookie_header_parses_multiple_cookies() {
