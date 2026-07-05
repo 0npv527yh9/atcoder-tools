@@ -1,6 +1,6 @@
 use crate::{
     cli::{Cli, Command, CookieCommand},
-    dto::{config::Config, SessionData},
+    dto::{config::Config, cookie::RevelSessionCookie, SessionData},
     infra::{
         atcoder::{self, Dao},
         config_loader::{self, ConfigLoadError},
@@ -17,26 +17,26 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
         Command::Cookie { command } => {
             match command {
                 CookieCommand::Import => {
-                    let session_data = usecase::cookie::import(&config)?;
-                    let dao = session_data_to_dao(session_data);
+                    let revel_session_cookie = usecase::cookie::import()?;
+                    let dao = session_data_to_dao(revel_session_cookie)?;
                     let logged_in = usecase::cookie::check(&config, &dao)?;
 
                     if !logged_in {
                         return Err(usecase::cookie::Error::ImportedCookieNotLoggedIn.into());
                     }
 
-                    let session_data = save_dao(&config, dao)?;
-                    println!("{} Created", config.app_config.path.session_data.display());
-                    println!("Expires: {:?}", session_data.expired_datetime());
+                    let revel_session_cookie = save_dao(&config, dao)?;
+                    println!("Created: {}", config.app_config.path.session_data.display());
+                    println!("Expires: {:?}", revel_session_cookie.expires_datetime());
                 }
                 CookieCommand::Check => {
                     let session_data = load_session_data(&config)?;
-                    let dao = session_data_to_dao(session_data);
+                    let dao = session_data_to_dao(session_data.revel_session_cookie)?;
                     let logged_in = usecase::cookie::check(&config, &dao)?;
 
                     if logged_in {
                         let session_data = save_dao(&config, dao)?;
-                        println!("Expires: {:?}", session_data.expired_datetime());
+                        println!("Expires: {:?}", session_data.expires_datetime());
                     }
                 }
             }
@@ -44,7 +44,7 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
         }
         Command::FetchTestSuite { url } => {
             let session_data = load_session_data(&config)?;
-            let dao = session_data_to_dao(session_data);
+            let dao = session_data_to_dao(session_data.revel_session_cookie)?;
             usecase::fetch_test_suite::run(&config, &dao, url)?;
             save_dao(&config, dao)?;
             Ok(RunOutcome::Success)
@@ -69,23 +69,29 @@ fn load_session_data(config: &Config) -> Result<SessionData, file_handler::Error
     file_handler::load(&config.app_config.path.session_data)
 }
 
-fn session_data_to_dao(session_data: SessionData) -> Dao {
-    let csrf_token = session_data.csrf_token;
-    let http_handler = HttpHandler::with_cookies(session_data.cookies);
-    Dao::new(http_handler, csrf_token)
+fn session_data_to_dao(
+    revel_session_cookie: RevelSessionCookie,
+) -> Result<Dao, usecase::cookie::Error> {
+    let csrf_token = revel_session_cookie
+        .csrf_token()
+        .ok_or(usecase::cookie::Error::CsrfTokenNotFound)?;
+    let cookie_store = revel_session_cookie.into_cookie_store()?;
+    let http_handler =
+        HttpHandler::with_cookie_store(cookie_store).map_err(atcoder::Error::from)?;
+    Ok(Dao::new(http_handler, csrf_token))
 }
 
-fn save_dao(config: &Config, dao: Dao) -> Result<SessionData, file_handler::Error> {
-    let session_data = dao.into_session_data();
-    save_session_data(config, &session_data)?;
-    Ok(session_data)
+fn save_dao(config: &Config, dao: Dao) -> Result<RevelSessionCookie, Error> {
+    let revel_session_cookie = dao.revel_session_cookie()?;
+    save_revel_session_cookie(config, &revel_session_cookie)?;
+    Ok(revel_session_cookie)
 }
 
-fn save_session_data(
+fn save_revel_session_cookie(
     config: &Config,
-    session_data: &SessionData,
+    revel_session_cookie: &RevelSessionCookie,
 ) -> Result<(), file_handler::Error> {
-    file_handler::save(&config.app_config.path.session_data, session_data)
+    file_handler::save(&config.app_config.path.session_data, revel_session_cookie)
 }
 
 #[derive(thiserror::Error, Debug)]

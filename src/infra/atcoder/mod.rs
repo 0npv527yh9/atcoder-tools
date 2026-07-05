@@ -3,7 +3,7 @@ pub mod page_type;
 pub mod url;
 use self::url::Url;
 use crate::{
-    dto::{SessionData, TestSuite},
+    dto::{cookie::RevelSessionCookie, SessionData, TestSuite},
     infra::http_handler::{self, HttpHandler},
 };
 
@@ -33,11 +33,9 @@ impl Dao {
         Ok(html.task_screen_names())
     }
 
-    pub fn into_session_data(self) -> SessionData {
-        SessionData {
-            cookies: self.http_handler.into_cookies(),
-            csrf_token: self.csrf_token,
-        }
+    pub fn revel_session_cookie(&self) -> Result<RevelSessionCookie, Error> {
+        let cookie_store = self.http_handler.cookie_store()?;
+        Ok(RevelSessionCookie::from_cookie_store(&cookie_store)?)
     }
 
     pub fn check_login(&self, url: &Url<page_type::Home>) -> Result<bool, Error> {
@@ -50,6 +48,9 @@ impl Dao {
 pub enum Error {
     #[error(transparent)]
     HttpHandler(#[from] http_handler::Error),
+
+    #[error(transparent)]
+    Cookie(#[from] crate::dto::cookie::Error),
 }
 
 #[cfg(test)]

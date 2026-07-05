@@ -1,5 +1,5 @@
 use crate::{
-    dto::SessionData,
+    dto::{cookie::RevelSessionCookie, SessionData},
     infra::atcoder::{html::Html, page_type},
 };
 use std::{fs, path::Path};
@@ -104,25 +104,16 @@ fn fetch_session_data(url: &str) -> Result<SessionData, Error> {
         .call()
         .map_err(|_| Error::FetchFailed(url.to_string()))?;
 
-    let request_url = ::url::Url::parse(url).unwrap();
-    let cookies = agent
-        .cookie_jar_lock()
-        .iter()
-        .filter_map(|cookie| {
-            Some(
-                cookie_store::Cookie::parse(
-                    format!("{}={}", cookie.name(), cookie.value()),
-                    &request_url,
-                )
-                .ok()?
-                .into_owned(),
-            )
-        })
-        .collect();
-    Ok(SessionData {
-        cookies,
-        csrf_token: "Dummy CSRF Token".to_string(),
-    })
+    for cookie in agent.cookie_jar_lock().iter() {
+        let cookie = format!("{}={}", cookie.name(), cookie.value());
+        if let Ok(revel_session_cookie) = RevelSessionCookie::parse(&cookie) {
+            return Ok(SessionData {
+                revel_session_cookie,
+            });
+        }
+    }
+
+    Err(Error::InvalidSessionData(url.to_string()))
 }
 
 #[cfg(test)]

@@ -1,9 +1,6 @@
 use crate::infra::atcoder::{html::Html, url::Url};
-use cookie_store::Cookie;
-use std::str::FromStr;
-use ureq::{http::Uri, Agent};
-
-const ATCODER_ORIGIN: &str = "https://atcoder.jp/";
+use cookie_store::CookieStore;
+use ureq::Agent;
 
 pub struct HttpHandler {
     agent: Agent,
@@ -14,19 +11,15 @@ impl HttpHandler {
         Self { agent }
     }
 
-    pub fn with_cookies(cookies: Vec<Cookie<'static>>) -> Self {
+    pub fn with_cookie_store(cookie_store: CookieStore) -> Result<Self, Error> {
         let agent = Agent::new_with_defaults();
-        let uri = atcoder_origin_uri();
         {
+            let mut buf = Vec::new();
+            serde_json::to_writer(&mut buf, &cookie_store).unwrap();
             let mut jar = agent.cookie_jar_lock();
-            for cookie in cookies {
-                if let Ok(cookie) = ureq::Cookie::parse(cookie.to_string(), &uri) {
-                    let _ = jar.insert(cookie, &uri);
-                }
-            }
+            jar.load_json(&*buf);
         }
-
-        Self { agent }
+        Ok(Self { agent })
     }
 
     pub fn get<PageType>(&self, url: &Url<PageType>) -> Result<Html<PageType>, Error> {
@@ -49,28 +42,13 @@ impl HttpHandler {
         Ok(html)
     }
 
-    pub fn into_cookies(self) -> Vec<Cookie<'static>> {
-        let request_url = ::url::Url::parse(ATCODER_ORIGIN).unwrap();
+    pub fn cookie_store(&self) -> Result<CookieStore, Error> {
+        let mut buf = Vec::new();
 
-        self.agent
-            .cookie_jar_lock()
-            .iter()
-            .filter_map(|cookie| {
-                Some(
-                    Cookie::parse(
-                        format!("{}={}", cookie.name(), cookie.value()),
-                        &request_url,
-                    )
-                    .ok()?
-                    .into_owned(),
-                )
-            })
-            .collect()
+        self.agent.cookie_jar_lock().save_json(&mut buf);
+
+        Ok(serde_json::from_slice(&buf).unwrap())
     }
-}
-
-fn atcoder_origin_uri() -> Uri {
-    Uri::from_str(ATCODER_ORIGIN).unwrap()
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -80,6 +58,15 @@ pub enum Error {
 
     #[error("Too Large Response")]
     TooLargeResponse(#[from] std::io::Error),
+
+    #[error("Invalid cookie origin URL")]
+    InvalidCookieOriginUrl,
+
+    #[error("Cookie origin URL is not configured")]
+    CookieOriginUrlNotConfigured,
+
+    #[error("Invalid cookie: {0}")]
+    InvalidCookie(String),
 }
 
 impl From<ureq::Error> for Error {
@@ -93,29 +80,27 @@ mod tests {
     use super::*;
     use crate::{infra::atcoder::page_type, utils};
 
+    const ORIGIN_URL: &str = "https://example.test/";
+
     #[test]
-    fn with_cookies_round_trips_cookie_names_and_values() {
-        let request_url = ::url::Url::parse(ATCODER_ORIGIN).unwrap();
-        let cookies = vec![
-            Cookie::parse(
-                "REVEL_SESSION=session-value; Path=/; HttpOnly; Secure",
+    fn with_cookie_store_round_trips_cookie_name_and_value() {
+        let request_url: url::Url = ::url::Url::parse(ORIGIN_URL).unwrap();
+        let mut cookie_store = CookieStore::default();
+        cookie_store
+            .parse(
+                "session_cookie=session-value; Path=/; HttpOnly; Secure",
                 &request_url,
             )
+            .unwrap();
+
+        let round_tripped = HttpHandler::with_cookie_store(cookie_store)
             .unwrap()
-            .into_owned(),
-            Cookie::parse("csrf_token=csrf-value; Path=/", &request_url)
-                .unwrap()
-                .into_owned(),
-        ];
+            .cookie_store()
+            .unwrap();
 
-        let round_tripped = HttpHandler::with_cookies(cookies).into_cookies();
-
-        assert!(round_tripped.iter().any(|cookie| {
-            cookie.name() == "REVEL_SESSION" && cookie.value() == "session-value"
+        assert!(round_tripped.iter_any().any(|cookie| {
+            cookie.name() == "session_cookie" && cookie.value() == "session-value"
         }));
-        assert!(round_tripped
-            .iter()
-            .any(|cookie| cookie.name() == "csrf_token" && cookie.value() == "csrf-value"));
     }
 
     #[test]
@@ -125,9 +110,7 @@ mod tests {
         let expected = utils::test::load_homepage_html().html();
         let expected = expected.split('\n').collect::<Vec<_>>();
 
-        let http_handler = HttpHandler {
-            agent: Agent::new_with_defaults(),
-        };
+        let http_handler = HttpHandler::new(Agent::new_with_defaults());
 
         // Run
         let url: Url<page_type::Home> = "https://atcoder.jp/home".to_string().into();

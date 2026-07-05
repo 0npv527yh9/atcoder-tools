@@ -1,23 +1,20 @@
 pub mod config;
 pub mod cookie;
 
+use crate::dto::cookie::RevelSessionCookie;
 use crate::infra::atcoder::{page_type, url::Url};
 use ::time::OffsetDateTime;
-use cookie_store::Cookie;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
 pub struct SessionData {
-    pub cookies: Vec<Cookie<'static>>,
-    pub csrf_token: String,
+    pub revel_session_cookie: RevelSessionCookie,
 }
 
 impl SessionData {
     pub fn expired_datetime(&self) -> Option<OffsetDateTime> {
-        self.cookies
-            .iter()
-            .find_map(|cookie| cookie.expires_datetime())
+        self.revel_session_cookie.expires_datetime()
     }
 }
 

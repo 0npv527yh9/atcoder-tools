@@ -241,7 +241,11 @@ mod tests {
     fn test_sign_up_button_after_login() {
         // Setup
         let session_data = utils::test::load_session_data();
-        let http_handler = HttpHandler::with_cookies(session_data.cookies);
+        let cookie_store = session_data
+            .revel_session_cookie
+            .into_cookie_store()
+            .unwrap();
+        let http_handler = HttpHandler::with_cookie_store(cookie_store).unwrap();
 
         // Run
         let html: Html<page_type::Home> = http_handler

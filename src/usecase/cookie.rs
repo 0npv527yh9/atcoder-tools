@@ -1,22 +1,12 @@
 use crate::{
-    dto::{
-        config::Config,
-        cookie::{extract_csrf_token, parse_request_cookie_header},
-        SessionData,
-    },
+    dto::{config::Config, cookie::RevelSessionCookie},
     infra::{atcoder, terminal_handler},
 };
 
-pub fn import(config: &Config) -> Result<SessionData, Error> {
-    let cookie_header = terminal_handler::read_cookie_header().map_err(Error::Terminal)?;
-    let cookies =
-        parse_request_cookie_header(&cookie_header, config.app_config.url.homepage.as_str())?;
-    let csrf_token = extract_csrf_token(&cookies).ok_or(Error::CsrfTokenNotFound)?;
-
-    Ok(SessionData {
-        cookies,
-        csrf_token,
-    })
+pub fn import() -> Result<RevelSessionCookie, Error> {
+    let cookie_str = terminal_handler::read_revel_session().map_err(Error::Terminal)?;
+    let revel_session_cookie = RevelSessionCookie::parse(&cookie_str)?;
+    Ok(revel_session_cookie)
 }
 
 pub fn check(config: &Config, dao: &atcoder::Dao) -> Result<bool, Error> {

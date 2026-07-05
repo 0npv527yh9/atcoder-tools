@@ -3,8 +3,8 @@ use itertools::Itertools;
 use std::{io, iter};
 use terminal_size::{Height, Width};
 
-pub fn read_cookie_header() -> io::Result<String> {
-    rpassword::prompt_password("Cookie: ")
+pub fn read_revel_session() -> io::Result<String> {
+    rpassword::prompt_password("REVEL_SESSION: ")
 }
 
 pub fn print_diffs(diffs: &[Diff], verbose: bool) -> Result<(), Error> {
