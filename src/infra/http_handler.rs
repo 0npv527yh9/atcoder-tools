@@ -17,7 +17,7 @@ impl HttpHandler {
             let mut buf = Vec::new();
             serde_json::to_writer(&mut buf, &cookie_store).unwrap();
             let mut jar = agent.cookie_jar_lock();
-            jar.load_json(&*buf);
+            jar.load_json(&*buf)?;
         }
         Ok(Self { agent })
     }
@@ -88,7 +88,7 @@ mod tests {
         let mut cookie_store = CookieStore::default();
         cookie_store
             .parse(
-                "session_cookie=session-value; Path=/; HttpOnly; Secure",
+                "REVEL_SESSION=session-value; Path=/; Expires=Thu, 31 Dec 2099 23:59:59 GMT; HttpOnly; Secure",
                 &request_url,
             )
             .unwrap();
@@ -99,7 +99,7 @@ mod tests {
             .unwrap();
 
         assert!(round_tripped.iter_any().any(|cookie| {
-            cookie.name() == "session_cookie" && cookie.value() == "session-value"
+            cookie.name() == "REVEL_SESSION" && cookie.value() == "session-value"
         }));
     }
 
