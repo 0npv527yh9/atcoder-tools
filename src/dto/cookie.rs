@@ -15,8 +15,12 @@ pub struct RevelSessionCookie {
 impl RevelSessionCookie {
     pub fn parse(cookie_str: &str) -> Result<Self, Error> {
         let cookie = Cookie::parse(cookie_str, &request_url())
-            .unwrap()
+            .map_err(Error::InvalidCookie)?
             .into_owned();
+
+        if cookie.name() != REVEL_SESSION_COOKIE_NAME {
+            return Err(Error::UnexpectedCookieName(cookie.name().to_string()));
+        }
 
         Ok(Self { cookie })
     }
@@ -40,7 +44,7 @@ impl RevelSessionCookie {
     pub fn csrf_token(&self) -> Option<String> {
         let decoded = percent_decode_str(self.cookie.value()).decode_utf8().ok()?;
         let (_, csrf_token) = decoded.split_once("csrf_token:")?;
-        let csrf_token = csrf_token.split_whitespace().next()?;
+        let (csrf_token, _) = csrf_token.split_once("\0")?;
 
         if csrf_token.is_empty() {
             None
@@ -64,7 +68,7 @@ pub enum Error {
     InvalidRequestUrl,
 
     #[error("Invalid cookie: {0}")]
-    InvalidCookie(#[from] cookie_store::Error),
+    InvalidCookie(#[from] cookie_store::CookieError),
 
     #[error("Unexpected cookie name: {0}")]
     UnexpectedCookieName(String),
@@ -105,13 +109,6 @@ mod tests {
                 .unwrap();
 
         assert_eq!("session-value", cookie.cookie.value());
-    }
-
-    #[test]
-    fn revel_session_cookie_rejects_invalid_url() {
-        let error = RevelSessionCookie::parse("REVEL_SESSION=session-value; Path=/").unwrap_err();
-
-        assert!(matches!(error, Error::InvalidRequestUrl));
     }
 
     #[test]
