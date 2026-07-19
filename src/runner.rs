@@ -20,29 +20,18 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
                 CookieCommand::Import => {
                     let cookie_str =
                         terminal_handler::read_revel_session().map_err(Error::Terminal)?;
-                    let revel_session_cookie = usecase::cookie::parse_imported_cookie(&cookie_str)?;
+                    let revel_session_cookie = RevelSessionCookie::parse(&cookie_str)?;
                     let dao = session_data_to_dao(revel_session_cookie)?;
-                    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
-                    print_login_status(logged_in);
+                    let revel_session_cookie = check_and_refresh_session(&config, dao)?;
 
-                    if !logged_in {
-                        return Err(Error::ImportedCookieNotLoggedIn);
-                    }
-
-                    let revel_session_cookie = save_dao(&config, dao)?;
-                    println!("Created: {}", config.app_config.path.session_data.display());
                     println!("Expires: {:?}", revel_session_cookie.expires_datetime());
                 }
                 CookieCommand::Check => {
                     let session_data = load_session_data(&config)?;
                     let dao = session_data_to_dao(session_data.revel_session_cookie)?;
-                    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
-                    print_login_status(logged_in);
+                    let session_data = check_and_refresh_session(&config, dao)?;
 
-                    if logged_in {
-                        let session_data = save_dao(&config, dao)?;
-                        println!("Expires: {:?}", session_data.expires_datetime());
-                    }
+                    println!("Expires: {:?}", session_data.expires_datetime());
                 }
             }
             Ok(RunOutcome::Success)
@@ -84,12 +73,14 @@ fn session_data_to_dao(revel_session_cookie: RevelSessionCookie) -> Result<Dao, 
     Ok(Dao::new(http_handler, csrf_token))
 }
 
-fn print_login_status(logged_in: bool) {
-    if logged_in {
-        println!("Logged in");
-    } else {
-        println!("Not logged in");
+fn check_and_refresh_session(config: &Config, dao: Dao) -> Result<RevelSessionCookie, Error> {
+    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
+
+    if !logged_in {
+        return Err(Error::NotLoggedIn);
     }
+
+    save_dao(config, dao)
 }
 
 fn save_dao(config: &Config, dao: Dao) -> Result<RevelSessionCookie, Error> {
@@ -117,16 +108,13 @@ pub(crate) enum Error {
     File(#[from] file_handler::Error),
 
     #[error(transparent)]
-    Cookie(#[from] usecase::cookie::Error),
-
-    #[error(transparent)]
     SessionCookie(#[from] crate::dto::cookie::Error),
 
     #[error("CSRF Token Not Found")]
     CsrfTokenNotFound,
 
-    #[error("Imported cookies are not logged in")]
-    ImportedCookieNotLoggedIn,
+    #[error("Cookie is not logged in")]
+    NotLoggedIn,
 
     #[error("Terminal Input Error: {:?}", .0)]
     Terminal(#[source] std::io::Error),

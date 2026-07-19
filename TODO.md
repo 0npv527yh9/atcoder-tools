@@ -26,6 +26,7 @@
   - `usecase::fetch_test_suite` には `Contest` / `Task` のような fetch-test 用の入力モデルを置く。
   - `infra::atcoder` には AtCoder website の URL 構造、`/tasks_print` や `/tasks` の派生 URL、`task_screen_name` 解析などを残す。
   - `FetchTaskUrl` 相当の責務は「usecase の対象種別」と「AtCoder website adapter の URL 知識」に分ける。
+- [ ] 34. `terminal_handler::read_revel_session` の配置を見直し、cookie 専用入力を端末 adapter に持たせ続けるか整理する。
 
 ## P3: 品質改善
 
