@@ -1,40 +1,48 @@
-use crate::{
-    dto::{config::Config, cookie::RevelSessionCookie},
-    infra::{atcoder, terminal_handler},
-};
+use crate::dto::cookie::RevelSessionCookie;
 
-pub fn import() -> Result<RevelSessionCookie, Error> {
-    let cookie_str = terminal_handler::read_revel_session().map_err(Error::Terminal)?;
-    let revel_session_cookie = RevelSessionCookie::parse(&cookie_str)?;
+pub fn parse_imported_cookie(cookie_str: &str) -> Result<RevelSessionCookie, Error> {
+    let revel_session_cookie = RevelSessionCookie::parse(cookie_str)?;
     Ok(revel_session_cookie)
-}
-
-pub fn check(config: &Config, dao: &atcoder::Dao) -> Result<bool, Error> {
-    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
-
-    if logged_in {
-        println!("Logged in");
-    } else {
-        println!("Not logged in");
-    }
-
-    Ok(logged_in)
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
     Cookie(#[from] crate::dto::cookie::Error),
+}
 
-    #[error("CSRF Token Not Found")]
-    CsrfTokenNotFound,
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dto::cookie;
 
-    #[error("Imported cookies are not logged in")]
-    ImportedCookieNotLoggedIn,
+    #[test]
+    fn parse_imported_cookie_accepts_revel_session_cookie() {
+        let cookie = parse_imported_cookie(
+            "REVEL_SESSION=session%00csrf_token%3Arevel-csrf%00other%3Avalue; Path=/",
+        )
+        .unwrap();
 
-    #[error(transparent)]
-    Dao(#[from] atcoder::Error),
+        assert_eq!(Some("revel-csrf".to_string()), cookie.csrf_token());
+    }
 
-    #[error("Terminal Input Error: {:?}", .0)]
-    Terminal(#[source] std::io::Error),
+    #[test]
+    fn parse_imported_cookie_rejects_invalid_cookie() {
+        let error = parse_imported_cookie("invalid").unwrap_err();
+
+        assert!(matches!(
+            error,
+            Error::Cookie(cookie::Error::InvalidCookie(_))
+        ));
+    }
+
+    #[test]
+    fn parse_imported_cookie_rejects_unexpected_cookie_name() {
+        let error = parse_imported_cookie("csrf_token=csrf-value; Path=/").unwrap_err();
+
+        assert!(matches!(
+            error,
+            Error::Cookie(cookie::Error::UnexpectedCookieName(name)) if name == "csrf_token"
+        ));
+    }
 }

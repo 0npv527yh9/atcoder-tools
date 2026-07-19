@@ -6,6 +6,7 @@ use crate::{
         config_loader::{self, ConfigLoadError},
         file_handler,
         http_handler::HttpHandler,
+        terminal_handler,
     },
     usecase, RunOutcome,
 };
@@ -17,12 +18,15 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
         Command::Cookie { command } => {
             match command {
                 CookieCommand::Import => {
-                    let revel_session_cookie = usecase::cookie::import()?;
+                    let cookie_str =
+                        terminal_handler::read_revel_session().map_err(Error::Terminal)?;
+                    let revel_session_cookie = usecase::cookie::parse_imported_cookie(&cookie_str)?;
                     let dao = session_data_to_dao(revel_session_cookie)?;
-                    let logged_in = usecase::cookie::check(&config, &dao)?;
+                    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
+                    print_login_status(logged_in);
 
                     if !logged_in {
-                        return Err(usecase::cookie::Error::ImportedCookieNotLoggedIn.into());
+                        return Err(Error::ImportedCookieNotLoggedIn);
                     }
 
                     let revel_session_cookie = save_dao(&config, dao)?;
@@ -32,7 +36,8 @@ pub(crate) fn run(cli: Cli) -> Result<RunOutcome, Error> {
                 CookieCommand::Check => {
                     let session_data = load_session_data(&config)?;
                     let dao = session_data_to_dao(session_data.revel_session_cookie)?;
-                    let logged_in = usecase::cookie::check(&config, &dao)?;
+                    let logged_in = dao.check_login(&config.app_config.url.homepage)?;
+                    print_login_status(logged_in);
 
                     if logged_in {
                         let session_data = save_dao(&config, dao)?;
@@ -69,16 +74,22 @@ fn load_session_data(config: &Config) -> Result<SessionData, file_handler::Error
     file_handler::load(&config.app_config.path.session_data)
 }
 
-fn session_data_to_dao(
-    revel_session_cookie: RevelSessionCookie,
-) -> Result<Dao, usecase::cookie::Error> {
+fn session_data_to_dao(revel_session_cookie: RevelSessionCookie) -> Result<Dao, Error> {
     let csrf_token = revel_session_cookie
         .csrf_token()
-        .ok_or(usecase::cookie::Error::CsrfTokenNotFound)?;
+        .ok_or(Error::CsrfTokenNotFound)?;
     let cookie_store = revel_session_cookie.into_cookie_store()?;
     let http_handler =
         HttpHandler::with_cookie_store(cookie_store).map_err(atcoder::Error::from)?;
     Ok(Dao::new(http_handler, csrf_token))
+}
+
+fn print_login_status(logged_in: bool) {
+    if logged_in {
+        println!("Logged in");
+    } else {
+        println!("Not logged in");
+    }
 }
 
 fn save_dao(config: &Config, dao: Dao) -> Result<RevelSessionCookie, Error> {
@@ -107,6 +118,18 @@ pub(crate) enum Error {
 
     #[error(transparent)]
     Cookie(#[from] usecase::cookie::Error),
+
+    #[error(transparent)]
+    SessionCookie(#[from] crate::dto::cookie::Error),
+
+    #[error("CSRF Token Not Found")]
+    CsrfTokenNotFound,
+
+    #[error("Imported cookies are not logged in")]
+    ImportedCookieNotLoggedIn,
+
+    #[error("Terminal Input Error: {:?}", .0)]
+    Terminal(#[source] std::io::Error),
 
     #[error(transparent)]
     FetchTestSuite(#[from] usecase::fetch_test_suite::Error),

@@ -5,7 +5,6 @@
 ## P1: テストしやすくする
 
 - [ ] 6. `usecase::fetch_test_suite` から IO・CLI 出力・ユースケースロジックを分離する。
-- [ ] 7. `usecase::cookie` から端末入力・CLI 出力・ログイン判定・保存処理を分離する。
 - [ ] 8. ignored な実 HTTP テストとは別に、fake/mock ベースの usecase / runner テストを追加する。
 - [ ] 9. usecase / runner / cli の境界ごとに単体テストを追加する。
 - [ ] 10. `command_handler` の実プロセス起動に依存しないテスト境界を作る。
@@ -46,6 +45,7 @@
 - [x] 3. `run` 系関数から `unwrap_or_exit` / `process::exit` を外し、`main` だけで終了コードを決める。
 - [x] 4. `file_handler::load_config` の `panic!` を通常のエラーにする。
 - [x] 5. `config_loader::load_config` の `set_current_dir` を見直し、グローバルなカレントディレクトリ変更に依存しない構造にする。
+- [x] 7. `usecase::cookie` から端末入力・CLI 出力・ログイン判定・保存処理を分離する。
 - [x] 12. `domain::path` から `handler::file_handler` 依存をなくす。
 - [x] 13. `handler` という名前が実装詳細に寄りすぎているため、将来的に `infra` や `adapter` への整理を検討する。
 - [x] 26. `main` / `cli` / `app` / `usecase` / `infra` の層分けが既存 TODO 13・16 と整合するか整理し、必要なモジュール境界だけを決める。
